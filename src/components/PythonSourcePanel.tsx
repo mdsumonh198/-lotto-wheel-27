@@ -118,6 +118,21 @@ div[data-testid="stHorizontalBlock"] div.stButton {
     align-items: center !important;
 }
 
+/* Universal Button Text Safeguard (Prevents washed-out white text on white backgrounds) */
+.stButton button,
+.stDownloadButton button,
+div[data-testid="stButton"] button,
+div[data-testid="stDownloadButton"] button {
+    color: #f1f5f9 !important;
+}
+
+.stButton button *,
+.stDownloadButton button *,
+div[data-testid="stButton"] button *,
+div[data-testid="stDownloadButton"] button * {
+    color: inherit !important;
+}
+
 /* ========================================================================= */
 /* 3. STEP 1: BUDGET BUTTONS (2x2 GRID - 50% EACH)                           */
 /* ========================================================================= */
@@ -138,7 +153,9 @@ div[class*="st-key-pill_"] button {
     box-sizing: border-box !important;
 }
 
-div[class*="st-key-pill_"] button div[data-testid="stMarkdownContainer"] p {
+div[class*="st-key-pill_"] button div[data-testid="stMarkdownContainer"] p,
+div[class*="st-key-pill_"] button span,
+div[class*="st-key-pill_"] button p {
     font-size: 0.82rem !important;
     font-weight: 700 !important;
     white-space: nowrap !important;
@@ -155,30 +172,73 @@ div[class*="st-key-pill_"] button[kind="primary"] {
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.4) !important;
 }
 
+div[class*="st-key-pill_"] button[kind="primary"] p,
+div[class*="st-key-pill_"] button[kind="primary"] span,
+div[class*="st-key-pill_"] button[kind="primary"] div[data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+
 div[class*="st-key-pill_"] button[kind="secondary"] {
     background: #141b26 !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    color: #cbd5e1 !important;
+    border: 1.5px solid rgba(255, 255, 255, 0.16) !important;
+    color: #f1f5f9 !important;
+}
+
+div[class*="st-key-pill_"] button[kind="secondary"] p,
+div[class*="st-key-pill_"] button[kind="secondary"] span,
+div[class*="st-key-pill_"] button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
+    color: #f1f5f9 !important;
+    font-weight: 700 !important;
 }
 
 /* ========================================================================= */
-/* 4. ACTION BUTTONS (RANDOM PICK / CLEAR)                                   */
+/* 4. ACTION BUTTONS (RANDOM PICK / CLEAR) - HIGH CONTRAST                   */
 /* ========================================================================= */
-div[class*="st-key-act_"] button {
+div[class*="st-key-act_random"] button {
+    background: #132338 !important;
+    border: 1.5px solid #38bdf8 !important;
+    color: #38bdf8 !important;
     width: 100% !important;
-    height: 38px !important;
-    min-height: 38px !important;
+    height: 40px !important;
+    min-height: 40px !important;
     border-radius: 10px !important;
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
     padding: 0 6px !important;
+    box-shadow: 0 2px 8px rgba(56, 189, 248, 0.2) !important;
 }
 
-div[class*="st-key-act_"] button div[data-testid="stMarkdownContainer"] p {
-    font-size: 0.82rem !important;
-    font-weight: 700 !important;
+div[class*="st-key-act_random"] button p,
+div[class*="st-key-act_random"] button div[data-testid="stMarkdownContainer"] p,
+div[class*="st-key-act_random"] button span {
+    color: #38bdf8 !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
     margin: 0 !important;
-    padding: 0 !important;
+}
+
+div[class*="st-key-act_clear"] button {
+    background: #2a1520 !important;
+    border: 1.5px solid #f43f5e !important;
+    color: #fb7185 !important;
+    width: 100% !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
+    padding: 0 6px !important;
+    box-shadow: 0 2px 8px rgba(244, 63, 94, 0.2) !important;
+}
+
+div[class*="st-key-act_clear"] button p,
+div[class*="st-key-act_clear"] button div[data-testid="stMarkdownContainer"] p,
+div[class*="st-key-act_clear"] button span {
+    color: #fb7185 !important;
+    font-size: 0.85rem !important;
+    font-weight: 800 !important;
+    margin: 0 !important;
 }
 
 /* ========================================================================= */
@@ -204,7 +264,8 @@ div[class*="st-key-ball_"] button {
 }
 
 div[class*="st-key-ball_"] button div[data-testid="stMarkdownContainer"],
-div[class*="st-key-ball_"] button p {
+div[class*="st-key-ball_"] button p,
+div[class*="st-key-ball_"] button span {
     margin: 0 !important;
     padding: 0 !important;
     line-height: 1 !important;
@@ -222,16 +283,71 @@ div[class*="st-key-ball_"] button[kind="primary"] {
     box-shadow: 0 0 10px rgba(16, 185, 129, 0.6) !important;
 }
 
+div[class*="st-key-ball_"] button[kind="primary"] p,
+div[class*="st-key-ball_"] button[kind="primary"] span,
+div[class*="st-key-ball_"] button[kind="primary"] div[data-testid="stMarkdownContainer"] p {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+}
+
 div[class*="st-key-ball_"] button[kind="secondary"] {
     background: #141b26 !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    color: #cbd5e1 !important;
+    border: 1px solid rgba(255, 255, 255, 0.16) !important;
+    color: #f1f5f9 !important;
+}
+
+div[class*="st-key-ball_"] button[kind="secondary"] p,
+div[class*="st-key-ball_"] button[kind="secondary"] span,
+div[class*="st-key-ball_"] button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
+    color: #f1f5f9 !important;
+    font-weight: 800 !important;
 }
 
 div[class*="st-key-ball_"] button[kind="secondary"]:hover {
     background: #1e293b !important;
     border-color: #38bdf8 !important;
     color: #ffffff !important;
+}
+
+/* ========================================================================= */
+/* 6. DOWNLOAD BUTTON (HIGH-VISIBILITY EMERALD CTA WITH CRISP WHITE TEXT)    */
+/* ========================================================================= */
+div[data-testid="stDownloadButton"],
+.stDownloadButton {
+    width: 100% !important;
+    margin-top: 10px !important;
+}
+
+div[data-testid="stDownloadButton"] button,
+.stDownloadButton > button {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    border: 1.5px solid #34d399 !important;
+    color: #ffffff !important;
+    width: 100% !important;
+    min-height: 46px !important;
+    height: 46px !important;
+    border-radius: 12px !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+div[data-testid="stDownloadButton"] button:hover,
+.stDownloadButton > button:hover {
+    background: linear-gradient(135deg, #047857 0%, #059669 100%) !important;
+    border-color: #6ee7b7 !important;
+}
+
+div[data-testid="stDownloadButton"] button p,
+div[data-testid="stDownloadButton"] button div[data-testid="stMarkdownContainer"] p,
+div[data-testid="stDownloadButton"] button span {
+    color: #ffffff !important;
+    font-size: 0.92rem !important;
+    font-weight: 800 !important;
+    margin: 0 !important;
 }
 
 /* ========================================================================= */
