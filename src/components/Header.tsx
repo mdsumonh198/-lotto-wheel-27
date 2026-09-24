@@ -2,8 +2,8 @@ import React from 'react';
 import { Download } from 'lucide-react';
 
 interface HeaderProps {
-  activeTab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip';
-  setActiveTab: (tab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip') => void;
+  activeTab: 'dashboard' | 'generator' | 'or-theory' | 'python-source' | 'colab-mip';
+  setActiveTab: (tab: 'dashboard' | 'generator' | 'or-theory' | 'python-source' | 'colab-mip') => void;
   onExportWheel: () => void;
   onExportBudget: () => void;
   budgetCount: number;
@@ -44,6 +44,16 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             Live Analyzer
+          </button>
+          <button
+            onClick={() => setActiveTab('generator')}
+            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+              activeTab === 'generator'
+                ? 'bg-emerald-500 text-black font-bold shadow-sm shadow-emerald-500/40'
+                : 'text-emerald-400 hover:text-white bg-emerald-950/40 border border-emerald-800/40'
+            }`}
+          >
+            ⚡ Ticket Generator
           </button>
           <button
             onClick={() => setActiveTab('or-theory')}

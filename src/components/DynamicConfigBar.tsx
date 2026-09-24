@@ -52,9 +52,14 @@ export const DynamicConfigBar: React.FC<DynamicConfigBarProps> = ({
               }}
               className="w-full bg-[#0d1117] border border-neutral-700 rounded-lg px-3 py-1.5 text-xs text-neutral-200 font-mono focus:outline-none focus:border-emerald-500"
             >
-              <option value={20}>20 Numbers (Pool: 1–20)</option>
-              <option value={27}>27 Numbers (Standard 6/27)</option>
-              <option value={36}>36 Numbers (Expanded 6/36)</option>
+              <option value={20}>20 Numbers (6/20 Quick System)</option>
+              <option value={24}>24 Numbers (6/24 System)</option>
+              <option value={27}>27 Numbers (6/27 Standard)</option>
+              <option value={30}>30 Numbers (6/30 Half-Pool)</option>
+              <option value={36}>36 Numbers (6/36 Expanded)</option>
+              <option value={42}>42 Numbers (6/42 National)</option>
+              <option value={45}>45 Numbers (6/45 Mega)</option>
+              <option value={49}>49 Numbers (6/49 Classic)</option>
             </select>
           </div>
 

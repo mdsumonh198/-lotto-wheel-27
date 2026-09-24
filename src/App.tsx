@@ -5,6 +5,7 @@ import { SmartBudgetPanel } from './components/SmartBudgetPanel';
 import { NumberSelector } from './components/NumberSelector';
 import { MetricCards } from './components/MetricCards';
 import { DetailTable } from './components/DetailTable';
+import { TicketGeneratorPanel } from './components/TicketGeneratorPanel';
 import { OperationsResearchPanel } from './components/OperationsResearchPanel';
 import { PythonSourcePanel } from './components/PythonSourcePanel';
 import { ColabScriptPanel } from './components/ColabScriptPanel';
@@ -21,7 +22,7 @@ import { GameConfig } from './types';
 import { BarChart3, AlertCircle, Info, Sparkles } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'or-theory' | 'python-source' | 'colab-mip'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'generator' | 'or-theory' | 'python-source' | 'colab-mip'>('dashboard');
 
   // Feature 1: Dynamic Game Configuration
   const [gameConfig, setGameConfig] = useState<GameConfig>({
@@ -208,6 +209,23 @@ export default function App() {
               </>
             )}
           </div>
+        )}
+
+        {activeTab === 'generator' && (
+          <TicketGeneratorPanel
+            currentPresetId={`${gameConfig.pickSize}-${gameConfig.poolSize}`}
+            onSelectGame={(preset) => {
+              setGameConfig({
+                poolSize: preset.poolSize,
+                pickSize: preset.pickSize,
+                guarantee: preset.guarantee,
+                drawnNumbers: preset.drawnNumbers,
+              });
+              setSelectedNumbers((prev) =>
+                prev.filter((n) => n <= preset.poolSize).slice(0, preset.drawnNumbers)
+              );
+            }}
+          />
         )}
 
         {activeTab === 'or-theory' && <OperationsResearchPanel />}

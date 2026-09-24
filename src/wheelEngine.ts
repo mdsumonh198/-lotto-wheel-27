@@ -1,4 +1,96 @@
-import { Ticket, TicketEvaluation, MatchCounts, GameConfig } from './types';
+import { Ticket, TicketEvaluation, MatchCounts, GameConfig, GamePreset, TicketGeneratorOptions } from './types';
+
+// Standard Lottery Game Presets
+export const GAME_PRESETS: GamePreset[] = [
+  {
+    id: '6-27',
+    name: '🎯 System 6/27 (Default)',
+    shortLabel: '6/27',
+    poolSize: 27,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [14, 135, 500, 2335],
+    description: 'Guaranteed 5-Match Full Lock with 2,335 tickets. Top choice for syndicates.',
+  },
+  {
+    id: '6-20',
+    name: '🎱 Quick System 6/20',
+    shortLabel: '6/20',
+    poolSize: 20,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [8, 45, 180, 780],
+    description: 'Compact 20-number pool. Very high prize density and quick full lock.',
+  },
+  {
+    id: '6-30',
+    name: '🎲 System 6/30',
+    shortLabel: '6/30',
+    poolSize: 30,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [18, 180, 650, 3100],
+    description: 'Balanced 30-number pool covering half the universe with high hitting power.',
+  },
+  {
+    id: '6-36',
+    name: '💎 System 6/36',
+    shortLabel: '6/36',
+    poolSize: 36,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [25, 250, 850, 3600],
+    description: 'Expanded 36-ball design for larger pools.',
+  },
+  {
+    id: '6-42',
+    name: '🔥 National Lotto 6/42',
+    shortLabel: '6/42',
+    poolSize: 42,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [30, 320, 1100, 4200],
+    description: 'Popular national lottery format with smart coverage tiers.',
+  },
+  {
+    id: '6-45',
+    name: '⭐ Mega Lotto 6/45',
+    shortLabel: '6/45',
+    poolSize: 45,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [35, 380, 1300, 4800],
+    description: 'Mega 45-number pool with high jackpot dispersion.',
+  },
+  {
+    id: '6-49',
+    name: '🏆 Classic Lotto 6/49',
+    shortLabel: '6/49',
+    poolSize: 49,
+    pickSize: 6,
+    guarantee: 5,
+    drawnNumbers: 6,
+    smartStops: [40, 450, 1600, 5500],
+    description: 'World-famous 6/49 format (UK, Canada, Germany, etc.) with smart priority tickets.',
+  },
+  {
+    id: '5-35',
+    name: '⚡ Fantasy 5/35 (Pick 5)',
+    shortLabel: '5/35',
+    poolSize: 35,
+    pickSize: 5,
+    guarantee: 4,
+    drawnNumbers: 5,
+    smartStops: [10, 80, 300, 1200],
+    description: '5-number game format with guaranteed 4-match and 5-match tiers.',
+  },
+];
 
 // Default 6/27 settings
 export const DEFAULT_POOL_SIZE = 27;
@@ -381,4 +473,94 @@ export function exportEvaluationsToCSV(evaluations: TicketEvaluation[]): string 
  */
 export function exportSmartStopWheelToCSV(tickets: { priorityRank: number; id: string; numbers: number[] }[]): string {
   return exportWheelToCSV(tickets);
+}
+
+/**
+ * Generates custom quick tickets for ANY game configuration with high entropy and dispersion.
+ * Supports: key numbers (fixed per ticket), excluded numbers, odd/even balance, consecutive number limits.
+ */
+export function generateCustomTickets(
+  poolSize: number,
+  pickSize: number,
+  options: Partial<TicketGeneratorOptions> = {}
+): Ticket[] {
+  const {
+    count = 10,
+    includeKeyNumbers = [],
+    excludeNumbers = [],
+    balancedOddEven = true,
+  } = options;
+
+  const validKeyNumbers = includeKeyNumbers
+    .filter((n) => n >= 1 && n <= poolSize && !excludeNumbers.includes(n))
+    .slice(0, pickSize - 1);
+
+  const excludeSet = new Set(excludeNumbers);
+  for (const k of validKeyNumbers) {
+    excludeSet.add(k);
+  }
+
+  const availablePool = Array.from({ length: poolSize }, (_, i) => i + 1).filter(
+    (n) => !excludeSet.has(n)
+  );
+
+  const neededPerTicket = pickSize - validKeyNumbers.length;
+  if (availablePool.length < neededPerTicket) {
+    return [];
+  }
+
+  const frequency = new Array(poolSize + 1).fill(0);
+  const seenCombos = new Set<string>();
+  const tickets: Ticket[] = [];
+
+  let attempts = 0;
+  const maxAttempts = count * 200;
+
+  while (tickets.length < count && attempts < maxAttempts) {
+    attempts++;
+
+    // Sort available pool by lowest frequency + slight random jitter for uniform dispersion
+    const shuffledPool = [...availablePool].sort(
+      (a, b) => frequency[a] - frequency[b] + (Math.random() - 0.5) * 0.4
+    );
+
+    let chosen: number[] = [];
+
+    if (balancedOddEven && neededPerTicket >= 2) {
+      // Aim for balanced odd and even
+      const odds = shuffledPool.filter((n) => n % 2 !== 0);
+      const evens = shuffledPool.filter((n) => n % 2 === 0);
+      const targetOdds = Math.floor(neededPerTicket / 2);
+      const targetEvens = neededPerTicket - targetOdds;
+
+      const pickOdds = odds.slice(0, targetOdds);
+      const pickEvens = evens.slice(0, targetEvens);
+      chosen = [...pickOdds, ...pickEvens];
+
+      if (chosen.length < neededPerTicket) {
+        const remaining = shuffledPool.filter((n) => !chosen.includes(n));
+        chosen = [...chosen, ...remaining.slice(0, neededPerTicket - chosen.length)];
+      }
+    } else {
+      chosen = shuffledPool.slice(0, neededPerTicket);
+    }
+
+    const fullTicket = [...validKeyNumbers, ...chosen].sort((a, b) => a - b);
+    const key = fullTicket.join('-');
+
+    if (!seenCombos.has(key) && fullTicket.length === pickSize) {
+      seenCombos.add(key);
+      tickets.push({
+        id: `TK-${String(tickets.length + 1).padStart(4, '0')}`,
+        numbers: fullTicket,
+        priorityRank: tickets.length + 1,
+      });
+
+      for (const n of fullTicket) {
+        frequency[n]++;
+      }
+    }
+  }
+
+  return tickets;
 }

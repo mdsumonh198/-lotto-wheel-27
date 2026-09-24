@@ -15,10 +15,30 @@ export interface TicketEvaluation {
 }
 
 export interface GameConfig {
-  poolSize: number; // v: 20, 27, 36
+  poolSize: number; // v: 20, 27, 36, 42, 45, 49
   pickSize: number; // k: 5, 6
   guarantee: number; // t: 3, 4, 5
-  drawnNumbers: number; // m: 6
+  drawnNumbers: number; // m: 5, 6
+}
+
+export interface GamePreset {
+  id: string;
+  name: string;
+  shortLabel: string;
+  poolSize: number;
+  pickSize: number;
+  guarantee: number;
+  drawnNumbers: number;
+  smartStops: [number, number, number, number];
+  description: string;
+}
+
+export interface TicketGeneratorOptions {
+  count: number;
+  includeKeyNumbers: number[];
+  excludeNumbers: number[];
+  balancedOddEven: boolean;
+  maxConsecutive: number;
 }
 
 export interface MatchCounts {
