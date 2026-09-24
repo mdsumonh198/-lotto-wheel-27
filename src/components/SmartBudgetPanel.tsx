@@ -33,6 +33,9 @@ export const SmartBudgetPanel: React.FC<SmartBudgetPanelProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                Step 1
+              </span>
               <h3 className="text-base font-bold text-white tracking-tight">
                 Smart Budget & Stop System (Priority Ranked Ordering)
               </h3>

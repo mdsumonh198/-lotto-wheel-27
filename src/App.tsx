@@ -149,6 +149,16 @@ export default function App() {
               </div>
             ) : (
               <>
+                {/* Step 3 Section Title */}
+                <div className="flex items-center gap-2 mb-3 mt-1">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                    Step 3
+                  </span>
+                  <h3 className="text-sm font-bold text-white tracking-wide">
+                    Instant Win Evaluation & Coverage Analysis
+                  </h3>
+                </div>
+
                 {/* Key Result Metrics Cards */}
                 <MetricCards
                   budgetMatchCounts={budgetMatchCounts}

@@ -46,6 +46,9 @@ export const NumberSelector: React.FC<NumberSelectorProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-neutral-800">
         <div>
           <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              Step 2
+            </span>
             <h2 className="text-base font-semibold text-white">Winning Numbers Selection</h2>
             <span
               className={`text-xs font-mono font-medium px-2 py-0.5 rounded ${
@@ -65,15 +68,23 @@ export const NumberSelector: React.FC<NumberSelectorProps> = ({
         {/* Action Controls */}
         <div className="flex items-center gap-2 flex-wrap">
           <button
+            type="button"
             onClick={handleQuickPick}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded-lg text-xs font-medium transition-colors border border-neutral-700"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 hover:text-white rounded-lg text-xs font-medium transition-colors border border-neutral-700 cursor-pointer"
           >
             <Dices className="w-3.5 h-3.5 text-emerald-400" />
             <span>Random Draw</span>
           </button>
           <button
+            type="button"
             onClick={() => onChange([])}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-800 hover:bg-neutral-700 text-neutral-400 hover:text-neutral-200 rounded-lg text-xs font-medium transition-colors border border-neutral-700"
+            disabled={selectedNumbers.length === 0}
+            title={selectedNumbers.length === 0 ? "No numbers selected" : "Clear all selected numbers"}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+              selectedNumbers.length === 0
+                ? 'bg-neutral-900/60 text-neutral-600 border-neutral-800/80 cursor-not-allowed opacity-60'
+                : 'bg-rose-950/40 hover:bg-rose-900/60 text-rose-300 hover:text-white border-rose-800/60 cursor-pointer active:scale-95'
+            }`}
           >
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Clear</span>

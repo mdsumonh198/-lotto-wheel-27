@@ -864,14 +864,12 @@ if "budget_val" not in st.session_state or st.session_state.get("last_game_key")
     st.session_state["last_game_key"] = selected_key
 
 # Validate chosen_numbers
-if "chosen_numbers" not in st.session_state:
-    st.session_state["chosen_numbers"] = list(range(1, pick_size + 1))
+if "chosen_numbers" not in st.session_state or st.session_state.get("last_game_key_for_picks") != selected_key:
+    st.session_state["chosen_numbers"] = list(range(1, min(pick_size, pool_size) + 1))
+    st.session_state["last_game_key_for_picks"] = selected_key
 else:
+    # Only keep numbers within valid pool range 1..pool_size; do NOT force-pad if user cleared or unpicked!
     valid_picks = [n for n in st.session_state["chosen_numbers"] if 1 <= n <= pool_size][:pick_size]
-    if len(valid_picks) < pick_size:
-        # Pad with available numbers
-        rem = [n for n in range(1, pool_size + 1) if n not in valid_picks]
-        valid_picks.extend(rem[:pick_size - len(valid_picks)])
     st.session_state["chosen_numbers"] = sorted(valid_picks)
 
 
