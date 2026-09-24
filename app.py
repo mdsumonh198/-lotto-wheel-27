@@ -593,6 +593,13 @@ st.markdown(MOBILE_APP_CSS, unsafe_allow_html=True)
 # 2. Universal Lottery Mathematical Engine
 # -----------------------------------------------------------------------------
 GAME_PRESETS: Dict[str, Dict[str, Any]] = {
+    "6/25": {
+        "title": "🔥 System 6/25 (1–25, Pick 6)",
+        "pool": 25,
+        "pick": 6,
+        "target_size": 1540,
+        "stops": [12, 85, 160, 1540],
+    },
     "6/27": {
         "title": "🎯 System 6/27 (Default: 1–27, Pick 6)",
         "pool": 27,

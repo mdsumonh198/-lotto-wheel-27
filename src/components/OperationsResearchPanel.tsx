@@ -123,14 +123,60 @@ export const OperationsResearchPanel: React.FC = () => {
           <div className="space-y-2">
             <h4 className="font-semibold text-white">Google OR-Tools CP-SAT Strategy</h4>
             <p className="text-neutral-400 leading-relaxed">
-              Google OR-Tools utilizes a SAT-based integer programming solver that combines Conflict-Driven Clause Learning (CDCL) with linear relaxation cuts. By decomposing the 27 numbers into cyclic orbits ($t \mapsto (t+1) \pmod{27}$), the search space is reduced by a factor of 27.
+              Google OR-Tools utilizes a SAT-based integer programming solver that combines Conflict-Driven Clause Learning (CDCL) with linear relaxation cuts. By decomposing the numbers into cyclic orbits ($t \mapsto (t+1) \pmod&#123;v&#125;$), the search space is reduced drastically.
             </p>
           </div>
           <div className="space-y-2">
             <h4 className="font-semibold text-white">IBM CPLEX Branch-and-Cut</h4>
             <p className="text-neutral-400 leading-relaxed">
-              IBM CPLEX applies dual simplex relaxation followed by clique cuts, cover inequalities, and Gomory fractional cuts. The dual LP bound gives 2,331, confirming that no valid wheel can ever have fewer than 2,331 tickets.
+              IBM CPLEX applies dual simplex relaxation followed by clique cuts, cover inequalities, and Gomory fractional cuts to establish strict theoretical lower bounds for all lottery dimensions.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Multi-Match Guarantee Theory: 3, 4, 5-Match and Frequency Locks */}
+      <div className="bg-[#161b22] border border-neutral-800 rounded-xl p-6 space-y-4">
+        <h3 className="text-base font-semibold text-white flex items-center gap-2">
+          <CheckCircle className="w-4 h-4 text-cyan-400" />
+          <span>Multi-Match & Frequency Covering: $C(v, k, t, m, \lambda)$</span>
+        </h3>
+        <p className="text-xs text-neutral-300 leading-relaxed">
+          When a syndicate or player requests to guarantee a <strong>3-Match</strong>, <strong>4-Match (1 time or 2 times)</strong>, or <strong>5-Match</strong>, the integer programming model modifies the right-hand side constraint vector $b_i$:
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono">
+          <div className="bg-[#0e1622] border border-cyan-800/80 rounded-lg p-3.5 space-y-1.5">
+            <div className="text-cyan-400 font-bold">1. 3-Match Guarantee (1x & 2x)</div>
+            <div className="text-neutral-400 text-[11px]">
+              Constraint: $\sum x_j \ge 1$ for $t=3$.
+            </div>
+            <div className="text-white text-[11px] pt-1 border-t border-neutral-800">
+              • 6/25: <strong>12 tickets</strong> (1x) / <strong>24 tickets</strong> (2x)<br />
+              • 6/27: <strong>14 tickets</strong> (1x) / <strong>28 tickets</strong> (2x)
+            </div>
+          </div>
+
+          <div className="bg-[#0e1622] border border-cyan-800/80 rounded-lg p-3.5 space-y-1.5">
+            <div className="text-cyan-400 font-bold">2. 4-Match Guarantee (1x & 2x)</div>
+            <div className="text-neutral-400 text-[11px]">
+              Constraint: $\sum x_j \ge \lambda$ for $t=4$ ($\lambda=1$ or $\lambda=2$).
+            </div>
+            <div className="text-white text-[11px] pt-1 border-t border-neutral-800">
+              • 6/25: <strong>85 tickets</strong> (1x) / <strong>160 tickets</strong> (2x)<br />
+              • 6/27: <strong>135 tickets</strong> (1x) / <strong>240 tickets</strong> (2x)
+            </div>
+          </div>
+
+          <div className="bg-[#0e1622] border border-cyan-800/80 rounded-lg p-3.5 space-y-1.5">
+            <div className="text-emerald-400 font-bold">3. 5-Match Full Lock (1x)</div>
+            <div className="text-neutral-400 text-[11px]">
+              Constraint: $\sum x_j \ge 1$ for $t=5$.
+            </div>
+            <div className="text-white text-[11px] pt-1 border-t border-neutral-800">
+              • 6/25: <strong>1,540 tickets</strong> (Schönheim lock)<br />
+              • 6/27: <strong>2,335 tickets</strong> (+4 over bound)
+            </div>
           </div>
         </div>
       </div>

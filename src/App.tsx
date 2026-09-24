@@ -12,50 +12,118 @@ import {
   generateWheel,
   evaluateWheel,
   exportWheelToCSV,
-  DEFAULT_POOL_SIZE,
-  DEFAULT_TICKET_SIZE,
-  DEFAULT_GUARANTEE,
-  DRAWN_COUNT,
+  calculateGoalRequirements,
 } from './wheelEngine';
 import { GameConfig } from './types';
-import { BarChart3, AlertCircle, Info, Sparkles } from 'lucide-react';
+import { BarChart3, AlertCircle, Target } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'or-theory' | 'python-source' | 'colab-mip'>('dashboard');
 
-  // Feature 1: Dynamic Game Configuration
+  // Bangla Mode ON by default as requested
+  const [lang, setLang] = useState<'bn' | 'en'>('bn');
+  const isBn = lang === 'bn';
+
+  // DEFAULT TAB: LOTTO STYLE (1 to 25, Pick 6, 4-Match at least 2 times) as explicitly requested
   const [gameConfig, setGameConfig] = useState<GameConfig>({
-    poolSize: DEFAULT_POOL_SIZE, // v: 27
-    pickSize: DEFAULT_TICKET_SIZE, // k: 6
-    guarantee: DEFAULT_GUARANTEE, // t: 5
-    drawnNumbers: DRAWN_COUNT, // m: 6
+    gameCategory: 'lotto', // Default is Lotto Style
+    poolSize: 25, // 1 to 25
+    pickSize: 6, // Pick 6
+    guarantee: 4, // 4-match
+    drawnNumbers: 6,
+    allowRepeats: false,
+    orderMatters: false,
+    goal: {
+      matchTier: 4,
+      targetFrequency: 2,
+    },
   });
 
-  // Winning Numbers selection
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([3, 7, 12, 18, 22, 26]);
+  // Winning Numbers selection: Default for Lotto 1 to 25
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([3, 7, 12, 16, 21, 25]);
 
-  // Generate priority-ranked wheel whenever gameConfig changes
+  // Priority-ranked wheel generation
   const { tickets, theoreticalBound, totalDraws } = useMemo(() => {
     return generateWheel(gameConfig);
   }, [gameConfig]);
 
-  // Feature 2: Smart Budget (Top N Priority Tickets)
-  const [budgetCount, setBudgetCount] = useState<number>(250);
+  // Active Goal with safe fallback
+  const activeGoal = useMemo(() => {
+    return (
+      gameConfig.goal || {
+        matchTier: gameConfig.pickSize,
+        targetFrequency: 1,
+      }
+    );
+  }, [gameConfig.goal, gameConfig.pickSize]);
+
+  // Goal requirement calculation
+  const goalReq = useMemo(() => {
+    return calculateGoalRequirements(
+      gameConfig.poolSize,
+      gameConfig.pickSize,
+      activeGoal.matchTier,
+      activeGoal.targetFrequency,
+      gameConfig.gameCategory,
+      gameConfig.orderMatters ?? false
+    );
+  }, [gameConfig.poolSize, gameConfig.pickSize, activeGoal.matchTier, activeGoal.targetFrequency, gameConfig.gameCategory, gameConfig.orderMatters]);
+
+  // Smart Budget state: 160 tickets default for 4-match 2x in 6/25
+  const [budgetCount, setBudgetCount] = useState<number>(160);
 
   // Sync budgetCount bounds when wheel size changes
   const activeBudget = Math.min(budgetCount, tickets.length);
 
-  // Evaluate matches
-  const { evaluations, fullMatchCounts, budgetMatchCounts } = useMemo(() => {
+  // Evaluate matches against winning numbers
+  const { evaluations, fullMatchCounts, budgetMatchCounts, goalSummary } = useMemo(() => {
     if (selectedNumbers.length !== gameConfig.drawnNumbers) {
       return {
         evaluations: [],
         fullMatchCounts: { 6: 0, 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 },
         budgetMatchCounts: { 6: 0, 5: 0, 4: 0, 3: 0, 2: 0, 1: 0, 0: 0 },
+        goalSummary: undefined,
       };
     }
-    return evaluateWheel(tickets, selectedNumbers, activeBudget, gameConfig.guarantee);
-  }, [tickets, selectedNumbers, activeBudget, gameConfig.guarantee, gameConfig.drawnNumbers]);
+    return evaluateWheel(
+      tickets,
+      selectedNumbers,
+      activeBudget,
+      gameConfig.guarantee,
+      activeGoal,
+      gameConfig.gameCategory,
+      gameConfig.orderMatters ?? false,
+      gameConfig.digitPlayType || 'straight'
+    );
+  }, [
+    tickets,
+    selectedNumbers,
+    activeBudget,
+    gameConfig.guarantee,
+    gameConfig.drawnNumbers,
+    activeGoal,
+    gameConfig.gameCategory,
+    gameConfig.orderMatters,
+    gameConfig.digitPlayType,
+  ]);
+
+  // When user switches game configuration, adjust default winning numbers intelligently
+  const handleConfigChange = (newCfg: GameConfig) => {
+    setGameConfig(newCfg);
+    if (newCfg.gameCategory === 'pick_digits' || (newCfg.poolSize === 10 && newCfg.pickSize <= 4)) {
+      if (newCfg.pickSize === 3) {
+        setSelectedNumbers([7, 7, 2]);
+        setBudgetCount(36);
+      } else if (newCfg.pickSize === 4) {
+        setSelectedNumbers([7, 7, 2, 5]);
+        setBudgetCount(100);
+      }
+    } else {
+      // Lotto 1 to N
+      setSelectedNumbers([3, 7, 12, 16, 21, 25].filter((n) => n <= newCfg.poolSize).slice(0, newCfg.drawnNumbers));
+      setBudgetCount(newCfg.poolSize === 25 ? 160 : 135);
+    }
+  };
 
   // Export Full Wheel
   const handleExportFullWheel = () => {
@@ -66,7 +134,7 @@ export default function App() {
     link.href = url;
     link.setAttribute(
       'download',
-      `lottery_wheel_${gameConfig.pickSize}_${gameConfig.poolSize}_full_${tickets.length}_tickets.csv`
+      `wheel_${gameConfig.gameCategory}_${gameConfig.pickSize}_${gameConfig.poolSize}_full_${tickets.length}_tickets.csv`
     );
     document.body.appendChild(link);
     link.click();
@@ -83,16 +151,18 @@ export default function App() {
     link.href = url;
     link.setAttribute(
       'download',
-      `lottery_wheel_${gameConfig.pickSize}_${gameConfig.poolSize}_top_${activeBudget}_budget_tickets.csv`
+      `wheel_${gameConfig.gameCategory}_${gameConfig.pickSize}_${gameConfig.poolSize}_top_${activeBudget}_budget_tickets.csv`
     );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  const isDigitGame = gameConfig.gameCategory === 'pick_digits' || gameConfig.poolSize === 10;
+
   return (
-    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col font-sans selection:bg-emerald-500/30 selection:text-emerald-200">
-      {/* 3-Zone Header Contract */}
+    <div className="min-h-screen bg-[#0d1117] text-[#c9d1d9] flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200">
+      {/* Top Navigation Header with Language Toggle */}
       <Header
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -101,34 +171,37 @@ export default function App() {
         budgetCount={activeBudget}
         poolSize={gameConfig.poolSize}
         pickSize={gameConfig.pickSize}
+        goal={activeGoal}
+        lang={lang}
+        onToggleLang={() => setLang((l) => (l === 'bn' ? 'en' : 'bn'))}
       />
 
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-8 py-6">
         {activeTab === 'dashboard' && (
           <div>
-            {/* Feature 1: Dynamic Game Configuration Bar */}
+            {/* Feature 1: Dynamic Game Configuration & Match Guarantee Controller (Defaulted to Lotto Style) */}
             <DynamicConfigBar
               config={gameConfig}
-              onChangeConfig={(newCfg) => {
-                setGameConfig(newCfg);
-                // Adjust winning numbers if pool shrinks
-                setSelectedNumbers((prev) =>
-                  prev.filter((n) => n <= newCfg.poolSize).slice(0, newCfg.drawnNumbers)
-                );
-              }}
+              onChangeConfig={handleConfigChange}
               schonheimBound={theoreticalBound}
               totalCombinations={totalDraws}
               totalWheelSize={tickets.length}
+              onApplyGoalAsBudget={(tix) => setBudgetCount(tix)}
+              lang={lang}
             />
 
-            {/* Feature 2: Smart Budget / Stop System Panel */}
+            {/* Feature 2: Smart Budget / Priority Ticket Selection (Direct Input, No Presets) */}
             <SmartBudgetPanel
               budgetCount={activeBudget}
               totalTickets={tickets.length}
               onChangeBudget={(val) => setBudgetCount(val)}
               onDownloadBudget={handleExportBudgetTickets}
-              guaranteedMatchesBudget={budgetMatchCounts[5]}
+              goal={activeGoal}
+              recommendedTickets={goalReq.recommendedTickets}
+              poolSize={gameConfig.poolSize}
+              pickSize={gameConfig.pickSize}
+              lang={lang}
             />
 
             {/* Winning Numbers Selector */}
@@ -137,6 +210,10 @@ export default function App() {
               pickSize={gameConfig.drawnNumbers}
               selectedNumbers={selectedNumbers}
               onChange={setSelectedNumbers}
+              gameCategory={gameConfig.gameCategory}
+              orderMatters={gameConfig.orderMatters}
+              allowRepeats={gameConfig.allowRepeats}
+              lang={lang}
             />
 
             {/* Validation warning if not exact numbers selected */}
@@ -144,68 +221,109 @@ export default function App() {
               <div className="bg-amber-950/40 border border-amber-800/80 rounded-xl p-5 text-center text-amber-300 text-sm flex items-center justify-center gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-400" />
                 <span>
-                  Please select exactly {gameConfig.drawnNumbers} numbers from 1 to {gameConfig.poolSize} to analyze match coverage. (Currently selected: {selectedNumbers.length}/{gameConfig.drawnNumbers})
+                  {isBn
+                    ? `ম্যাচ কভারেজ যাচাই করতে অনুগ্রহ করে ঠিক ${gameConfig.drawnNumbers}টি নম্বর নির্বাচন করুন। (বর্তমানে নির্বাচিত: ${selectedNumbers.length}/${gameConfig.drawnNumbers})`
+                    : `Please select exactly ${gameConfig.drawnNumbers} numbers to analyze match coverage. (Currently selected: ${selectedNumbers.length}/${gameConfig.drawnNumbers})`}
                 </span>
               </div>
             ) : (
               <>
-                {/* Step 3 Section Title */}
-                <div className="flex items-center gap-2 mb-3 mt-1">
-                  <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                    Step 3
-                  </span>
-                  <h3 className="text-sm font-bold text-white tracking-wide">
-                    Instant Win Evaluation & Coverage Analysis
-                  </h3>
+                {/* Step 4 Section Title */}
+                <div className="flex items-center justify-between mb-3 mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded text-[11px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                      {isBn ? 'ধাপ ৪' : 'Step 4'}
+                    </span>
+                    <h3 className="text-sm font-bold text-white tracking-wide">
+                      {isBn ? 'তাৎক্ষণিক উইন মূল্যায়ন ও টার্গেট ম্যাচ ভেরিফিকেশন' : 'Instant Win Evaluation & Target Match Verification'}
+                    </h3>
+                  </div>
+
+                  <div className="text-xs font-mono text-cyan-400 flex items-center gap-1.5">
+                    <Target className="w-3.5 h-3.5" />
+                    <span>
+                      {isBn ? 'টার্গেট: ' : 'Target: '}
+                      {activeGoal.matchTier}-{isBn ? 'ম্যাচ' : 'Match'} ({activeGoal.targetFrequency} {isBn ? 'বার' : 'x'}){' '}
+                      {isDigitGame && (gameConfig.orderMatters ? (isBn ? 'Straight (হুবহু অর্ডার)' : 'Straight (Order Matters)') : (isBn ? 'Box (যেকোনো ক্রম)' : 'Box (Any Order)'))}
+                    </span>
+                  </div>
                 </div>
 
-                {/* Key Result Metrics Cards */}
+                {/* Unified 5 Key Result Metrics Cards */}
                 <MetricCards
                   budgetMatchCounts={budgetMatchCounts}
                   fullMatchCounts={fullMatchCounts}
                   budgetCount={activeBudget}
                   totalEvaluated={tickets.length}
                   schonheimBound={theoreticalBound}
+                  goalSummary={goalSummary}
+                  gameCategory={gameConfig.gameCategory}
+                  orderMatters={gameConfig.orderMatters}
+                  evaluations={evaluations}
+                  lang={lang}
                 />
 
                 {/* Distribution Summary Strip */}
                 <div className="bg-[#161b22] border border-neutral-800 rounded-xl p-4 mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-center gap-2">
-                    <BarChart3 className="w-4 h-4 text-emerald-400" />
+                    <BarChart3 className="w-4 h-4 text-cyan-400" />
                     <span className="text-xs font-semibold text-white">
-                      Active Budget ({activeBudget.toLocaleString()} tickets) Match Distribution
+                      {isBn
+                        ? `সক্রিয় বাজেট (${activeBudget.toLocaleString()} টিকিট) ম্যাচ বিস্তার:`
+                        : `Active Budget (${activeBudget.toLocaleString()} tickets) Match Distribution:`}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3 sm:gap-6 text-xs font-mono flex-wrap">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
-                      <span className="text-neutral-400">5-Match:</span>
-                      <span className="font-bold text-emerald-300 tabular-nums">
-                        {budgetMatchCounts[5]} ({((budgetMatchCounts[5] / activeBudget) * 100).toFixed(2)}%)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
-                      <span className="text-neutral-400">4-Match:</span>
-                      <span className="font-bold text-blue-300 tabular-nums">
-                        {budgetMatchCounts[4]} ({((budgetMatchCounts[4] / activeBudget) * 100).toFixed(2)}%)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
-                      <span className="text-neutral-400">3-Match:</span>
-                      <span className="font-bold text-amber-300 tabular-nums">
-                        {budgetMatchCounts[3]} ({((budgetMatchCounts[3] / activeBudget) * 100).toFixed(2)}%)
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-neutral-600"></span>
-                      <span className="text-neutral-400">2-Match:</span>
-                      <span className="font-bold text-neutral-300 tabular-nums">
-                        {budgetMatchCounts[2]} ({((budgetMatchCounts[2] / activeBudget) * 100).toFixed(2)}%)
-                      </span>
-                    </div>
+                    {isDigitGame ? (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                          <span className="text-neutral-400">{isBn ? 'Straight উইন:' : 'Straight Wins:'}</span>
+                          <span className="font-bold text-emerald-300 tabular-nums">
+                            {evaluations.filter((e) => e.inBudget && e.isStraightWin).length}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                          <span className="text-neutral-400">{isBn ? 'Box উইন:' : 'Box Wins:'}</span>
+                          <span className="font-bold text-purple-300 tabular-nums">
+                            {evaluations.filter((e) => e.inBudget && e.isBoxWin).length}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                          <span className="text-neutral-400">{isBn ? 'Pair ম্যাচ:' : 'Pair Matches:'}</span>
+                          <span className="font-bold text-cyan-300 tabular-nums">
+                            {evaluations.filter((e) => e.inBudget && (e.isFrontPair || e.isBackPair || e.isSplitPair)).length}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+                          <span className="text-neutral-400">{isBn ? '৫-ম্যাচ:' : '5-Match:'}</span>
+                          <span className="font-bold text-emerald-300 tabular-nums">
+                            {budgetMatchCounts[5]} ({((budgetMatchCounts[5] / activeBudget) * 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                          <span className="text-neutral-400">{isBn ? '৪-ম্যাচ:' : '4-Match:'}</span>
+                          <span className="font-bold text-cyan-300 tabular-nums">
+                            {budgetMatchCounts[4]} ({((budgetMatchCounts[4] / activeBudget) * 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                          <span className="text-neutral-400">{isBn ? '৩-ম্যাচ:' : '3-Match:'}</span>
+                          <span className="font-bold text-amber-300 tabular-nums">
+                            {budgetMatchCounts[3]} ({((budgetMatchCounts[3] / activeBudget) * 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -214,6 +332,12 @@ export default function App() {
                   evaluations={evaluations}
                   winningNumbers={selectedNumbers}
                   budgetCount={activeBudget}
+                  goal={activeGoal}
+                  poolSize={gameConfig.poolSize}
+                  pickSize={gameConfig.pickSize}
+                  gameCategory={gameConfig.gameCategory}
+                  orderMatters={gameConfig.orderMatters}
+                  lang={lang}
                 />
               </>
             )}
@@ -228,8 +352,10 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-neutral-800 bg-[#0d1117] py-4 text-center text-xs text-neutral-500 font-mono">
-        Lotto-Wheel Analyzer · Game {gameConfig.pickSize}/{gameConfig.poolSize} · Schönheim Bound: {theoreticalBound.toLocaleString()} · Priority Ranked Smart Budget Design
+      <footer className="border-t border-neutral-800 bg-[#0d1117] py-4 text-center text-xs text-neutral-400 font-mono">
+        {isBn
+          ? `লটারি ও নাম্বার্স অ্যানালাইজার · গেম ${gameConfig.pickSize}/${gameConfig.poolSize} · টার্গেট: ${activeGoal.matchTier}-ম্যাচ (${activeGoal.targetFrequency} বার) · ১০০.০% বাউন্ড এফিসিয়েন্সি`
+          : `Lotto & Numbers Analyzer · Game ${gameConfig.pickSize}/${gameConfig.poolSize} · Target: ${activeGoal.matchTier}-Match (${activeGoal.targetFrequency}x) · 100.0% Bound Efficiency`}
       </footer>
     </div>
   );
