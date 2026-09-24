@@ -17,7 +17,7 @@ import pandas as pd
 import streamlit as st
 
 # -----------------------------------------------------------------------------
-# 1. Mobile-First Page Config & Global CSS Reset
+# 1. Mobile-First Page Config & Bulletproof Mobile CSS
 # -----------------------------------------------------------------------------
 st.set_page_config(
     page_title="Lotto-Wheel 6/27",
@@ -27,14 +27,16 @@ st.set_page_config(
 
 MOBILE_APP_CSS = """
 <style>
-/* 1. ZERO HORIZONTAL SCROLLBARS GLOBALLY */
+/* ========================================================================= */
+/* 1. ZERO HORIZONTAL SCROLLBARS GLOBALLY ON ALL PHONES                      */
+/* ========================================================================= */
 html, body, [data-testid="stAppViewContainer"], .main, .block-container {
     overflow-x: hidden !important;
     max-width: 100vw !important;
     margin: 0 auto !important;
-    padding-left: 0.5rem !important;
-    padding-right: 0.5rem !important;
-    padding-top: 0.5rem !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+    padding-top: 6px !important;
     box-sizing: border-box !important;
     background-color: #0b0e14 !important;
     color: #e2e8f0 !important;
@@ -44,8 +46,8 @@ html, body, [data-testid="stAppViewContainer"], .main, .block-container {
 
 /* Eliminate excessive Streamlit default paddings */
 .block-container {
-    max-width: 480px !important;
-    padding-bottom: 3rem !important;
+    max-width: 440px !important;
+    padding-bottom: 2.5rem !important;
 }
 
 /* Hide Streamlit default chrome & headers */
@@ -55,66 +57,88 @@ html, body, [data-testid="stAppViewContainer"], .main, .block-container {
     display: none !important;
 }
 
-/* Force Fluid Containers without cutoff */
-div[data-testid="stVerticalBlock"] > div,
-.card, .stContainer, div[data-testid="stMetric"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-}
-
 /* ========================================================================= */
-/* CRITICAL MOBILE-FIRST RESPONSIVE FIXES (PREVENT 100% COLUMN COLLAPSE)     */
+/* 2. BULLETPROOF COLUMN SYSTEM (NEVER STACK, NEVER CUT OFF)                 */
 /* ========================================================================= */
-@media (max-width: 900px), (max-width: 640px) {
-    div[data-testid="stHorizontalBlock"] {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: nowrap !important;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
-        min-width: 0 !important;
-        width: auto !important;
-        flex: 1 1 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-}
-
-/* 1. COMPACT 2x2 GRID FOR BUDGET BUTTONS */
-div[data-testid="stHorizontalBlock"]:has(button[key*="pill_"]),
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-pill_"]) {
+div[data-testid="stHorizontalBlock"],
+.stHorizontalBlock {
     display: flex !important;
     flex-direction: row !important;
     flex-wrap: nowrap !important;
-    gap: 8px !important;
     width: 100% !important;
-    margin-bottom: 6px !important;
-}
-
-div[data-testid="stHorizontalBlock"]:has(button[key*="pill_"]) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-pill_"]) > div[data-testid="column"] {
-    flex: 1 1 calc(50% - 4px) !important;
-    width: calc(50% - 4px) !important;
-    max-width: calc(50% - 4px) !important;
+    max-width: 100% !important;
     min-width: 0 !important;
+    gap: 4px !important;
+    column-gap: 4px !important;
+    row-gap: 4px !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 5px !important;
+    box-sizing: border-box !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
 }
 
+/* Equal width distribution: each column takes exactly 1/N space */
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"],
+div[data-testid="stHorizontalBlock"] > div,
+.stHorizontalBlock > div {
+    flex: 1 1 0% !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+div[data-testid="stHorizontalBlock"] > div[data-testid="column"] > div {
+    min-width: 0 !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+}
+
+div[data-testid="stHorizontalBlock"] div.stButton {
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+/* ========================================================================= */
+/* 3. STEP 1: BUDGET BUTTONS (2x2 GRID - 50% EACH)                           */
+/* ========================================================================= */
 div[class*="st-key-pill_"] button {
     width: 100% !important;
     height: 42px !important;
     min-height: 42px !important;
-    border-radius: 12px !important;
-    font-size: 0.85rem !important;
+    border-radius: 10px !important;
+    font-size: 0.82rem !important;
     font-weight: 700 !important;
-    padding: 0 6px !important;
+    padding: 0 4px !important;
     white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    box-sizing: border-box !important;
+}
+
+div[class*="st-key-pill_"] button div[data-testid="stMarkdownContainer"] p {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 div[class*="st-key-pill_"] button[kind="primary"] {
@@ -125,30 +149,14 @@ div[class*="st-key-pill_"] button[kind="primary"] {
 }
 
 div[class*="st-key-pill_"] button[kind="secondary"] {
-    background: #161e2c !important;
+    background: #141b26 !important;
     border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: #cbd5e1 !important;
 }
 
-/* 2. ACTION BUTTONS (RANDOM PICK / CLEAR) */
-div[data-testid="stHorizontalBlock"]:has(button[key*="act_"]),
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-act_"]) {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    gap: 8px !important;
-    width: 100% !important;
-    margin-bottom: 10px !important;
-}
-
-div[data-testid="stHorizontalBlock"]:has(button[key*="act_"]) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-act_"]) > div[data-testid="column"] {
-    flex: 1 1 calc(50% - 4px) !important;
-    width: calc(50% - 4px) !important;
-    max-width: calc(50% - 4px) !important;
-    min-width: 0 !important;
-}
-
+/* ========================================================================= */
+/* 4. ACTION BUTTONS (RANDOM PICK / CLEAR)                                   */
+/* ========================================================================= */
 div[class*="st-key-act_"] button {
     width: 100% !important;
     height: 38px !important;
@@ -156,44 +164,22 @@ div[class*="st-key-act_"] button {
     border-radius: 10px !important;
     font-size: 0.82rem !important;
     font-weight: 700 !important;
+    padding: 0 6px !important;
 }
 
-/* 3. COMPACT CIRCULAR BALL GRID (1 TO 27) - 7 BALLS PER ROW */
-div[data-testid="stHorizontalBlock"]:has(button[key*="ball_"]),
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-ball_"]) {
-    display: flex !important;
-    flex-direction: row !important;
-    flex-wrap: nowrap !important;
-    gap: 3px !important;
-    justify-content: center !important;
-    align-items: center !important;
-    width: 100% !important;
-    margin-bottom: 5px !important;
-}
-
-div[data-testid="stHorizontalBlock"]:has(button[key*="ball_"]) > div[data-testid="column"],
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-ball_"]) > div[data-testid="column"] {
-    flex: 1 1 0 !important;
-    width: auto !important;
-    max-width: 14.28% !important;
-    min-width: 0 !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 0 !important;
+div[class*="st-key-act_"] button div[data-testid="stMarkdownContainer"] p {
+    font-size: 0.82rem !important;
+    font-weight: 700 !important;
     margin: 0 !important;
+    padding: 0 !important;
 }
 
-div[class*="st-key-ball_"] {
-    width: 100% !important;
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
-}
-
+/* ========================================================================= */
+/* 5. STEP 2: CIRCULAR BALL GRID (7 BALLS PER ROW, 100% RESPONSIVE)          */
+/* ========================================================================= */
 div[class*="st-key-ball_"] button {
-    width: clamp(34px, 9.6vw, 40px) !important;
-    height: clamp(34px, 9.6vw, 40px) !important;
+    width: clamp(34px, 9.4vw, 40px) !important;
+    height: clamp(34px, 9.4vw, 40px) !important;
     min-width: 32px !important;
     min-height: 32px !important;
     max-width: 42px !important;
@@ -215,14 +201,13 @@ div[class*="st-key-ball_"] button p {
     margin: 0 !important;
     padding: 0 !important;
     line-height: 1 !important;
-    font-size: 13px !important;
+    font-size: clamp(11px, 3.2vw, 13px) !important;
     font-weight: 800 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
 }
 
-/* Ball Button Color States */
 div[class*="st-key-ball_"] button[kind="primary"] {
     background: linear-gradient(135deg, #059669, #10b981) !important;
     border: 2px solid #34d399 !important;
@@ -242,46 +227,9 @@ div[class*="st-key-ball_"] button[kind="secondary"]:hover {
     color: #ffffff !important;
 }
 
-/* Custom Card Container */
-.m-card {
-    background: #141923;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 16px;
-    padding: 14px 12px;
-    margin-bottom: 12px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    width: 100%;
-    box-sizing: border-box;
-}
-
-/* Card Header */
-.card-title-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.step-badge {
-    background: linear-gradient(135deg, #059669, #10b981);
-    color: #ffffff;
-    font-size: 0.65rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border-radius: 6px;
-    letter-spacing: 0.05em;
-    flex-shrink: 0;
-}
-
-.card-title {
-    font-size: 0.92rem;
-    font-weight: 700;
-    color: #f8fafc;
-    letter-spacing: -0.01em;
-}
-
-/* Mobile App Bar */
+/* ========================================================================= */
+/* 6. CARDS, TOPBAR & RESULTS STYLING                                        */
+/* ========================================================================= */
 .mobile-topbar {
     display: flex;
     align-items: center;
@@ -317,6 +265,32 @@ div[class*="st-key-ball_"] button[kind="secondary"]:hover {
     border-radius: 20px;
 }
 
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0 8px 0;
+}
+
+.step-badge {
+    background: linear-gradient(135deg, #059669, #10b981);
+    color: #ffffff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+}
+
+.section-title {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #f8fafc;
+    letter-spacing: -0.01em;
+}
+
 /* Results Grid */
 .results-grid {
     display: grid;
@@ -329,7 +303,7 @@ div[class*="st-key-ball_"] button[kind="secondary"]:hover {
     background: #0d1118;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 12px;
-    padding: 10px 6px;
+    padding: 10px 4px;
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -378,22 +352,25 @@ div[class*="st-key-ball_"] button[kind="secondary"]:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
     background: #0d1117;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 10px;
     padding: 8px 10px;
     margin-top: 8px;
+    margin-bottom: 8px;
 }
 
 .tray-balls {
     display: flex;
-    gap: 6px;
+    gap: 5px;
     align-items: center;
 }
 
 .tray-ball {
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: #1e293b;
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -707,16 +684,15 @@ if "budget_val" not in st.session_state:
 
 st.markdown(
     """
-    <div class="m-card">
-        <div class="card-title-row">
-            <span class="step-badge">Step 1</span>
-            <span class="card-title">Choose Budget (Smart Stops)</span>
-        </div>
+    <div class="section-header">
+        <span class="step-badge">Step 1</span>
+        <span class="section-title">Choose Budget (Smart Stops)</span>
+    </div>
     """,
     unsafe_allow_html=True
 )
 
-# Row 1 of Budget 2x2 Grid
+# Row 1 of Budget 2x2 Grid (Stop 1 & Stop 2)
 b_r1_c1, b_r1_c2 = st.columns(2)
 with b_r1_c1:
     btn1_type = "primary" if st.session_state["budget_val"] == 14 else "secondary"
@@ -730,7 +706,7 @@ with b_r1_c2:
         st.session_state["budget_val"] = 135
         st.rerun()
 
-# Row 2 of Budget 2x2 Grid
+# Row 2 of Budget 2x2 Grid (Stop 3 & Full)
 b_r2_c1, b_r2_c2 = st.columns(2)
 with b_r2_c1:
     btn3_type = "primary" if st.session_state["budget_val"] == 500 else "secondary"
@@ -780,7 +756,6 @@ st.markdown(
         <span>Active: <strong style="color:#ffffff;">{budget_count:,}</strong> tickets</span>
         <span style="color:#38bdf8;">{((budget_count / total_wheel_size) * 100):.1f}% of wheel</span>
     </div>
-    </div>
     """,
     unsafe_allow_html=True
 )
@@ -796,16 +771,15 @@ current_picks = st.session_state["chosen_numbers"]
 
 st.markdown(
     """
-    <div class="m-card">
-        <div class="card-title-row">
-            <span class="step-badge">Step 2</span>
-            <span class="card-title">Select 6 Numbers (1 to 27)</span>
-        </div>
+    <div class="section-header">
+        <span class="step-badge">Step 2</span>
+        <span class="section-title">Select 6 Numbers (1 to 27)</span>
+    </div>
     """,
     unsafe_allow_html=True
 )
 
-# Quick Action Buttons
+# Quick Action Buttons (Random Pick / Clear)
 act_col1, act_col2 = st.columns(2)
 with act_col1:
     if st.button("🎲 Random Pick", key="act_random", use_container_width=True):
@@ -851,8 +825,6 @@ strip_color = "#34d399" if len(current_picks) == 6 else "#fbbf24"
 strip_html += f'</div><span style="font-size:0.75rem; font-weight:800; color:{strip_color}; font-family:ui-monospace, monospace;">{len(current_picks)}/6 Selected</span></div>'
 st.markdown(strip_html, unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)
-
 if len(current_picks) != 6:
     st.info(f"👉 Tap {6 - len(current_picks)} more ball(s) to compute your guaranteed wins.")
     st.stop()
@@ -894,11 +866,10 @@ if counts_full[5] == 0 and counts_full[6] == 0:
 
 st.markdown(
     """
-    <div class="m-card">
-        <div class="card-title-row">
-            <span class="step-badge">Step 3</span>
-            <span class="card-title">Instant Win Results</span>
-        </div>
+    <div class="section-header">
+        <span class="step-badge">Step 3</span>
+        <span class="section-title">Instant Win Results</span>
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -941,19 +912,16 @@ st.download_button(
     use_container_width=True
 )
 
-st.markdown("</div>", unsafe_allow_html=True)
-
 
 # -----------------------------------------------------------------------------
 # 4. INLINE SMART-STOP TABLE
 # -----------------------------------------------------------------------------
 st.markdown(
     """
-    <div class="m-card">
-        <div class="card-title-row">
-            <span class="step-badge" style="background:#475569;">Smart List</span>
-            <span class="card-title">Live Matching Tickets & Milestones</span>
-        </div>
+    <div class="section-header" style="margin-top:20px;">
+        <span class="step-badge" style="background:#475569;">Smart List</span>
+        <span class="section-title">Live Matching Tickets & Milestones</span>
+    </div>
     """,
     unsafe_allow_html=True
 )
@@ -1029,5 +997,3 @@ for item in display_tickets:
 
 if budget_count > len(display_tickets):
     st.caption(f"Showing first {len(display_tickets)} of {budget_count:,} tickets. Download CSV for the complete list.")
-
-st.markdown("</div>", unsafe_allow_html=True)
