@@ -172,7 +172,7 @@ export function generateWheel(
   const rawTickets: number[][] = [];
   const seen = new Set<string>();
 
-  // 1. Cyclic block differences in Z_v if pickSize == 6
+  // 1. Cyclic block differences in Z_v if pickSize == 6 or 5
   if (k === 6) {
     const baseBlocks = [
       [0, 1, 3, 7, 12, 20],
@@ -186,6 +186,27 @@ export function generateWheel(
     ];
 
     for (const block of baseBlocks) {
+      const valid = block.map((x) => x % v);
+      if (new Set(valid).size === k) {
+        for (let shift = 0; shift < v; shift++) {
+          const nums = valid.map((x) => ((x + shift) % v) + 1).sort((a, b) => a - b);
+          const key = nums.join('-');
+          if (!seen.has(key) && new Set(nums).size === k) {
+            seen.add(key);
+            rawTickets.push(nums);
+          }
+        }
+      }
+    }
+  } else if (k === 5) {
+    const baseBlocks5 = [
+      [0, 1, 3, 7, 14],
+      [0, 2, 6, 12, 21],
+      [0, 3, 9, 16, 24],
+      [0, 4, 11, 18, 23],
+    ];
+
+    for (const block of baseBlocks5) {
       const valid = block.map((x) => x % v);
       if (new Set(valid).size === k) {
         for (let shift = 0; shift < v; shift++) {
