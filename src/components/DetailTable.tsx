@@ -98,30 +98,38 @@ export const DetailTable: React.FC<DetailTableProps> = ({
         };
       }
 
-      // Not an exact ticket, find guaranteed winning ticket in wheel for this draw!
+      // Not an exact ticket, find ALL guaranteed winning tickets in wheel for this draw!
       const searchSet = new Set(sortedSearch);
-      let bestTicket: TicketEvaluation | null = null;
-      let maxHits = 0;
-      let bestHitsList: number[] = [];
+      const scored: { ticket: TicketEvaluation; hits: number; matchedBalls: number[]; sheetRow: number }[] = [];
 
       for (const item of evaluations) {
         const hits = item.numbers.filter((n) => searchSet.has(n));
-        if (hits.length > maxHits) {
-          maxHits = hits.length;
-          bestTicket = item;
-          bestHitsList = hits;
+        if (hits.length >= 3) {
+          scored.push({
+            ticket: item,
+            hits: hits.length,
+            matchedBalls: hits,
+            sheetRow: item.sheetRow || (item.priorityRank + 1),
+          });
         }
       }
 
-      if (bestTicket) {
+      scored.sort((a, b) => b.hits - a.hits || a.sheetRow - b.sheetRow);
+
+      if (scored.length > 0) {
+        const topHitCount = scored[0].hits;
+        const topTickets = scored.filter((s) => s.hits === topHitCount).slice(0, 5);
+        const bestTicket = topTickets[0].ticket;
+
         return {
           found: true,
           isExact: false,
           ticket: bestTicket,
+          topTickets,
           searchType: 'numbers' as const,
           sheetRow: bestTicket.sheetRow || (bestTicket.priorityRank + 1),
-          hitsCount: maxHits,
-          matchedBalls: bestHitsList,
+          hitsCount: topHitCount,
+          matchedBalls: topTickets[0].matchedBalls,
           drawNumbers: sortedSearch,
           excelRowNote: `Excel Sheet Row #${bestTicket.sheetRow || (bestTicket.priorityRank + 1)} (Row 1 is CSV Header)`,
         };
@@ -311,30 +319,30 @@ Wheel Dataset : Verified in ${evaluations.length.toLocaleString()} Tickets Full 
 
           {/* Quick preset buttons */}
           <div className="flex items-center gap-1.5 flex-wrap text-xs">
-            <span className="text-[11px] text-neutral-400">{isBn ? 'দ্রুত পরীক্ষা:' : 'Quick Proof:'}</span>
+            <span className="text-[11px] text-neutral-400">{isBn ? 'টেস্ট ড্র:' : 'Test Draws:'}</span>
             <button
-              onClick={() => setProofQuery('1, 2, 3, 4, 5, 6')}
+              onClick={() => setProofQuery('1, 2, 3, 4, 5, 12')}
               className="px-2 py-1 rounded bg-[#0d1117] hover:bg-neutral-800 text-emerald-300 border border-emerald-800/80 font-mono text-[11px] cursor-pointer transition-colors"
             >
-              1, 2, 3, 4, 5, 6
+              1, 2, 3, 4, 5, 12
             </button>
             <button
-              onClick={() => setProofQuery('TK-0001')}
+              onClick={() => setProofQuery('7, 12, 16, 20, 23, 27')}
               className="px-2 py-1 rounded bg-[#0d1117] hover:bg-neutral-800 text-cyan-300 border border-cyan-800 font-mono text-[11px] cursor-pointer transition-colors"
             >
-              TK-0001 (Row 2)
+              7, 12, 16, 20, 23, 27
+            </button>
+            <button
+              onClick={() => setProofQuery('3, 8, 14, 19, 22, 26')}
+              className="px-2 py-1 rounded bg-[#0d1117] hover:bg-neutral-800 text-amber-300 border border-amber-800 font-mono text-[11px] cursor-pointer transition-colors"
+            >
+              3, 8, 14, 19, 22, 26
             </button>
             <button
               onClick={() => setProofQuery('TK-0138')}
-              className="px-2 py-1 rounded bg-[#0d1117] hover:bg-neutral-800 text-amber-300 border border-amber-800 font-mono text-[11px] cursor-pointer transition-colors"
-            >
-              TK-0138 (Row 139)
-            </button>
-            <button
-              onClick={() => setProofQuery(`TK-${String(evaluations.length).padStart(4, '0')}`)}
               className="px-2 py-1 rounded bg-[#0d1117] hover:bg-neutral-800 text-purple-300 border border-purple-800 font-mono text-[11px] cursor-pointer transition-colors"
             >
-              {isBn ? `শেষ টিকিট (${evaluations.length})` : `Last Ticket (${evaluations.length})`}
+              TK-0138 (Row 139)
             </button>
           </div>
         </div>
@@ -347,7 +355,7 @@ Wheel Dataset : Verified in ${evaluations.length.toLocaleString()} Tickets Full 
               type="text"
               value={proofQuery}
               onChange={(e) => setProofQuery(e.target.value)}
-              placeholder={isBn ? 'যেমন: 1, 2, 3, 4, 5, 6 অথবা TK-0001 অথবা Row 2...' : 'e.g. 1, 2, 3, 4, 5, 6 or TK-0001 or Row 2...'}
+              placeholder={isBn ? 'যেমন: 7, 12, 16, 20, 23, 27 অথবা 1, 2, 3, 4, 5, 12 অথবা TK-0138...' : 'e.g. 7, 12, 16, 20, 23, 27 or 1, 2, 3, 4, 5, 12 or TK-0138...'}
               className="w-full bg-[#0d1117] border border-emerald-700/60 rounded-lg pl-9 pr-3 py-2 text-xs font-mono text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-400"
             />
           </div>
@@ -381,52 +389,99 @@ Wheel Dataset : Verified in ${evaluations.length.toLocaleString()} Tickets Full 
                         ? (isBn ? '✅ হুবহু টিকিট প্রমাণিত (EXACT TICKET IN WHEEL)' : '✅ EXACT TICKET IN WHEEL')
                         : (isBn ? `✅ ড্র নম্বরের বিপরীতে ${proofResult.hitsCount}-ম্যাচ উইনিং টিকিট নিশ্চিত!` : `✅ ${proofResult.hitsCount}-MATCH GUARANTEED WINNING TICKET!`)}
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-900/80 text-white font-bold border border-emerald-600">
-                      {proofResult.ticket.id}
-                    </span>
-                    <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 flex items-center gap-1">
-                      <FileSpreadsheet className="w-3.5 h-3.5" />
-                      <span>
-                        {isBn ? `এক্সেল শিট রো #${proofResult.sheetRow}` : `Excel Sheet Row #${proofResult.sheetRow}`}
+                    {proofResult.topTickets && proofResult.topTickets.length > 1 && (
+                      <span className="text-[11px] px-2 py-0.5 rounded bg-emerald-900 text-emerald-200 border border-emerald-700">
+                        {isBn ? `${proofResult.topTickets.length}টি বিজয়ী টিকিট পাওয়া গেছে` : `${proofResult.topTickets.length} Winning Tickets Found`}
                       </span>
-                    </span>
+                    )}
                   </div>
                   <span className="text-[11px] text-neutral-400">
-                    (CSV ফাইলে Row 1 হেডার, Row 2 থেকে টিকিট শুরু)
+                    (CSV ফাইলে Row 1 হেডার, তাই এক্সেল শিট রো = Rank + 1)
                   </span>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-neutral-400 text-[11px]">
-                      {proofResult.isExact ? (isBn ? 'টিকিট নম্বর:' : 'Numbers:') : (isBn ? 'হুইলে থাকা উইনিং টিকিট:' : 'Winning Ticket in Wheel:')}
-                    </span>
-                    {proofResult.ticket.numbers.map((num, i) => {
-                      const isHit = proofResult.matchedBalls ? proofResult.matchedBalls.includes(num) : winningNumbers.includes(num);
-                      return (
-                        <span
-                          key={i}
-                          className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-extrabold ${
-                            isHit
-                              ? 'bg-emerald-500 text-black shadow-sm ring-1 ring-emerald-300'
-                              : 'bg-[#0d1117] text-white border border-neutral-700'
-                          }`}
-                        >
-                          {String(num).padStart(2, '0')}
-                        </span>
-                      );
-                    })}
-                  </div>
+                {/* If multiple top winning tickets exist for this draw, display all of them */}
+                {proofResult.topTickets && proofResult.topTickets.length > 0 ? (
+                  <div className="space-y-2 pt-1">
+                    {proofResult.topTickets.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-black/40 border border-emerald-800/60 rounded-lg p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                      >
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-2 py-0.5 rounded bg-emerald-900/80 text-white font-bold border border-emerald-600">
+                            {item.ticket.id}
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 flex items-center gap-1">
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                            <span>Excel Row #{item.sheetRow}</span>
+                          </span>
+                          <div className="flex items-center gap-1 ml-1">
+                            {item.ticket.numbers.map((num, i) => {
+                              const isHit = item.matchedBalls.includes(num);
+                              return (
+                                <span
+                                  key={i}
+                                  className={`inline-flex items-center justify-center w-5 h-5 rounded text-[10px] font-extrabold ${
+                                    isHit
+                                      ? 'bg-emerald-500 text-black shadow-sm ring-1 ring-emerald-300'
+                                      : 'bg-[#0d1117] text-neutral-400 border border-neutral-700'
+                                  }`}
+                                >
+                                  {String(num).padStart(2, '0')}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </div>
 
-                  <div className="flex items-center gap-2 font-mono">
-                    <span className="text-[11px] text-neutral-400">
-                      {proofResult.isExact ? (isBn ? 'উইন ক্যাটাগরি:' : 'Status:') : (isBn ? 'মিলে যাওয়া সংখ্যা:' : 'Matched Balls:')}
-                    </span>
-                    <span className="px-2.5 py-0.5 rounded bg-emerald-500 text-black font-extrabold text-xs">
-                      {proofResult.hitsCount} Hits Guaranteed
-                    </span>
+                        <div className="flex items-center gap-2 text-right">
+                          <span className="text-[11px] text-neutral-300">
+                            Matched: <strong className="text-emerald-400">[{item.matchedBalls.map((n) => String(n).padStart(2, '0')).join(', ')}]</strong>
+                          </span>
+                          <span className="px-2 py-0.5 rounded bg-emerald-500 text-black font-extrabold text-[11px]">
+                            {item.hits} Hits
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2 py-0.5 rounded bg-emerald-900/80 text-white font-bold border border-emerald-600">
+                        {proofResult.ticket.id}
+                      </span>
+                      <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 flex items-center gap-1">
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                        <span>Excel Row #{proofResult.sheetRow}</span>
+                      </span>
+                      <div className="flex items-center gap-1 ml-2">
+                        {proofResult.ticket.numbers.map((num, i) => {
+                          const isHit = proofResult.matchedBalls ? proofResult.matchedBalls.includes(num) : winningNumbers.includes(num);
+                          return (
+                            <span
+                              key={i}
+                              className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-extrabold ${
+                                isHit
+                                  ? 'bg-emerald-500 text-black shadow-sm ring-1 ring-emerald-300'
+                                  : 'bg-[#0d1117] text-white border border-neutral-700'
+                              }`}
+                            >
+                              {String(num).padStart(2, '0')}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="px-2.5 py-0.5 rounded bg-emerald-500 text-black font-extrabold text-xs">
+                        {proofResult.hitsCount} Hits Guaranteed
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2">

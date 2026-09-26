@@ -1417,33 +1417,6 @@ with dl_col2:
     )
 
 # -----------------------------------------------------------------------------
-# 4.4. WORST-CASE SCENARIO & FINANCIAL RISK STRESS-TEST (সবচেয়ে খারাপ পরিস্থিতিতে সম্ভাব্য ক্ষতি)
-# -----------------------------------------------------------------------------
-with st.expander("⚠️ Worst-Case স্ট্রেস-টেস্ট: ২৩৩৫টি টিকিট কিনলে সবচেয়ে খারাপ কী ক্ষতি হতে পারে?", expanded=False):
-    st.markdown(
-        f"""
-        <div style="background: rgba(225, 29, 72, 0.12); border: 1.5px solid #f43f5e; border-radius: 10px; padding: 12px; margin-bottom: 12px;">
-            <div style="color: #fb7185; font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">
-                🛑 ক্লায়েন্টের আর্থিক সুরক্ষায় জরুরি বাস্তবতা (Investor Protection Reality Check):
-            </div>
-            <div style="color: #cbd5e1; font-size: 0.75rem; line-height: 1.5;">
-                ক্লায়েন্ট যদি বাস্তব টাকা দিয়ে এই <strong>{len(ranked_tickets):,}টি টিকিট</strong> কেনার চিন্তা করেন, তবে তাকে এই দুটি ঝুঁকি জানা বাধ্যতামূলক:
-            </div>
-            <div style="margin-top: 8px; font-size: 0.72rem; color: #f1f5f9; line-height: 1.6;">
-                <strong>১. সিনারিও ১ (ড্র পুলে লেগেছে কিন্তু জ্যাকপট লাগেনি):</strong><br/>
-                ২৩৩৫ টিকিটে জ্যাকপটের সম্ভাবনা মাত্র ০.৭৮%। বাকি ৯৯.২% ক্ষেত্রে সর্বোচ্চ প্রাইজ আসবে ১টি ৫-ম্যাচ।
-                টিকিট কিনতে যদি ২ লাখ টাকা খরচ হয়, আর ৫-ম্যাচে ২০ হাজার টাকা পাওয়া যায়, তবে <strong>সরাসরি ১ লাখ ৮০ হাজার টাকা (-৯০%) লোকসান হবে!</strong><br/><br/>
-                <strong>২. সিনারিও ২ (ড্র-এর ১টি সংখ্যাও পুলের বাইরে চলে গেলে):</strong><br/>
-                যদি লটারির ড্র-তে এমন কোনো সংখ্যা ওঠে যা নির্বাচিত পুলে নেই (যেমন ২৭ এর চেয়ে বড় সংখ্যা), তবে ৫-ম্যাচ পাওয়া যাবে শূন্য (০) টি!
-                এতে <strong>পুঁজির ৯৫% থেকে ১০০% সম্পূর্ণ বিনাশ হবে!</strong>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-    st.info("💡 উপদেশ: বাস্তব লাখ লাখ টাকা খরচের আগে আগামী ৩টি অফিসিয়াল ড্র এই শিটের সাথে পেপার-টেস্ট করে মিলিয়ে দেখুন।")
-
-# -----------------------------------------------------------------------------
 # 4.5. CLIENT PROOF & SHEET ROW INSPECTOR (ক্লায়েন্ট প্রমাণ ও শিট রো যাচাইকারী)
 # -----------------------------------------------------------------------------
 st.markdown(
@@ -1459,60 +1432,84 @@ st.markdown(
 st.markdown(
     """
     <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px;">
-        ক্লায়েন্ট যে টিকিট দেখতে চায় (যেমন: <strong>1, 2, 3, 4, 5, 6</strong> অথবা <strong>TK-0001</strong>), তা লিখে নিচের বক্সে সার্চ দিন। এক্সেল শিটের কত নম্বর রো-তে টিকিটটি রয়েছে তার সরাসরি প্রমাণ দেওয়া হবে।
+        যে কোনো ড্র নম্বর (যেমন: <strong>7, 12, 16, 20, 23, 27</strong> অথবা <strong>1, 2, 3, 4, 5, 12</strong>) অথবা টিকিট আইডি (<strong>TK-0145</strong>) বা রো (<strong>Row 150</strong>) লিখে সার্চ দিন। এক্সেল শিটের কত নম্বর রো-তে কোন কোন টিকিট মিলেছে তা সরাসরি যাচাই করুন।
     </div>
     """,
     unsafe_allow_html=True
 )
 
-default_proof_val = ", ".join(str(x) for x in current_picks) if current_picks else "1, 2, 3, 4, 5, 6"
+# Quick sample buttons to instantly test different rows
+q_col1, q_col2, q_col3 = st.columns(3)
+with q_col1:
+    if st.button("🧪 Draw A: 1, 2, 3, 4, 5, 12", key="qb_draw_a", use_container_width=True):
+        st.session_state["proof_input_field"] = "1, 2, 3, 4, 5, 12"
+        st.rerun()
+with q_col2:
+    if st.button("🧪 Draw B: 7, 12, 16, 20, 23, 27", key="qb_draw_b", use_container_width=True):
+        st.session_state["proof_input_field"] = "7, 12, 16, 20, 23, 27"
+        st.rerun()
+with q_col3:
+    if st.button("🧪 Draw C: 3, 8, 14, 19, 22, 26", key="qb_draw_c", use_container_width=True):
+        st.session_state["proof_input_field"] = "3, 8, 14, 19, 22, 26"
+        st.rerun()
 
-proof_input = st.text_input(
-    "Verify Ticket Numbers, Winning Draw, or Ticket ID for Client:",
-    value=default_proof_val,
-    key="client_proof_input"
-).strip().lower()
+current_input_val = st.session_state.get(
+    "proof_input_field",
+    ", ".join(str(x) for x in current_picks) if current_picks else "1, 2, 3, 4, 5, 6"
+)
 
-if proof_input:
-    num_matches = re.findall(r'\d+', proof_input)
+with st.form(key="client_proof_form"):
+    proof_input_text = st.text_input(
+        "Enter 6 Draw Numbers (e.g. 7, 12, 16, 20, 23, 27) or Ticket ID:",
+        value=current_input_val,
+        key="proof_form_input"
+    ).strip()
+    submitted = st.form_submit_button("🔍 Verify Draw / Check Exact Excel Sheet Rows", type="primary", use_container_width=True)
+
+proof_to_process = proof_input_text if submitted else current_input_val
+
+if proof_to_process:
+    st.session_state["proof_input_field"] = proof_to_process
+    clean_query = proof_to_process.strip().lower()
+    num_matches = re.findall(r'\d+', clean_query)
     found_item = None
     exact_match = False
-    covering_proof = None
+    top_winning_tickets = []
+    max_hits_found = 0
 
     if len(num_matches) == pick_size:
         search_nums = sorted([int(x) for x in num_matches])
-        # 1. Check if this is an exact ticket purchased in the wheel
+        search_set = set(search_nums)
+        
+        # 1. Check if this is an exact ticket in wheel
         for e in eval_data:
             if sorted(e["numbers"]) == search_nums:
                 found_item = e
                 exact_match = True
                 break
 
-        # 2. If not an exact ticket, find the guaranteed winning ticket in our wheel for this draw!
+        # 2. Find ALL tickets achieving the highest match count for this draw
         if not found_item:
-            search_set = set(search_nums)
-            best_ticket = None
-            max_hits = 0
-            best_hits_list = []
+            scored_tickets = []
             for e in eval_data:
                 hits = sorted(list(set(e["numbers"]).intersection(search_set)))
-                if len(hits) > max_hits:
-                    max_hits = len(hits)
-                    best_ticket = e
-                    best_hits_list = hits
+                if len(hits) >= 3:
+                    scored_tickets.append({
+                        "ticket": e,
+                        "hits": len(hits),
+                        "matched_balls": hits
+                    })
             
-            if best_ticket:
-                covering_proof = {
-                    "search_nums": search_nums,
-                    "ticket": best_ticket,
-                    "hits_count": max_hits,
-                    "matched_balls": best_hits_list
-                }
+            scored_tickets.sort(key=lambda x: (x["hits"], -x["ticket"]["rank"]), reverse=True)
+            if scored_tickets:
+                max_hits_found = scored_tickets[0]["hits"]
+                # Collect top tier winners (up to 5 tickets)
+                top_winning_tickets = [stk for stk in scored_tickets if stk["hits"] == max_hits_found][:5]
     else:
-        # Check by Ticket ID (TK-0001), Priority Rank (#1), or Excel Sheet Row (Row 2)
+        # Check by Ticket ID (TK-0145), Priority Rank (#145), or Excel Sheet Row (Row 146)
         for e in eval_data:
             row_num = e["rank"] + 1
-            if proof_input == e["id"].lower() or proof_input == str(e["rank"]) or proof_input == f"row {row_num}" or proof_input == f"row#{row_num}":
+            if clean_query == e["id"].lower() or clean_query == str(e["rank"]) or clean_query == f"row {row_num}" or clean_query == f"row#{row_num}":
                 found_item = e
                 exact_match = True
                 break
@@ -1536,34 +1533,38 @@ if proof_input:
             """,
             unsafe_allow_html=True
         )
-    elif covering_proof:
-        c_ticket = covering_proof["ticket"]
-        c_sheet_row = c_ticket["rank"] + 1
-        c_balls_str = " - ".join(f"{x:02d}" for x in c_ticket["numbers"])
-        c_hits_str = " - ".join(f"{x:02d}" for x in covering_proof["matched_balls"])
-        c_draw_str = " - ".join(f"{x:02d}" for x in covering_proof["search_nums"])
-        c_hits = covering_proof["hits_count"]
-        tier_title = "⭐ 5-MATCH GUARANTEE WINNER" if c_hits >= 5 else f"🔵 {c_hits}-MATCH WINNER"
-
-        st.markdown(
-            f"""
-            <div style="background: rgba(16, 185, 129, 0.18); border: 2px solid #10b981; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
-                <div style="color: #34d399; font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">
-                    ✅ {tier_title} (প্রমাণিত: এই ড্র নম্বরের বিপরীতে আমাদের হুইলে {c_hits}-ম্যাচ বিজয়ী টিকিট রয়েছে!)
-                </div>
-                <div style="color: #ffffff; font-size: 0.8rem; line-height: 1.7;">
-                    • <strong>Drawn Numbers (ড্র নম্বর):</strong> <span style="color:#fbbf24; font-weight:bold;">{c_draw_str}</span><br/>
-                    • <strong>Guaranteed Winning Ticket:</strong> <span style="color:#38bdf8; font-weight:bold;">{c_ticket["id"]}</span> (Priority Rank #{c_ticket["rank"]})<br/>
-                    • <strong>EXCEL SHEET ROW:</strong> <span style="background:#059669; color:#ffffff; padding:2px 8px; border-radius:4px; font-weight:800;">Row {c_sheet_row}</span> <span style="color:#94a3b8; font-size:0.72rem;">(CSV ফাইলে Row 1 হেডার, তাই এক্সেলে এটি Row {c_sheet_row})</span><br/>
-                    • <strong>Ticket Numbers in Wheel:</strong> <span style="color:#ffffff;">{c_balls_str}</span><br/>
-                    • <strong>Matched {c_hits} Numbers:</strong> <span style="color:#34d399; font-weight:800; font-size:0.85rem;">[{c_hits_str}]</span> — <span style="color:#38bdf8;">100% গ্যারান্টিড প্রাইজ নিশ্চিত!</span>
-                </div>
+    elif top_winning_tickets:
+        c_draw_str = " - ".join(f"{x:02d}" for x in search_nums)
+        tier_title = "⭐ 5-MATCH GUARANTEE WINNER" if max_hits_found >= 5 else f"🔵 {max_hits_found}-MATCH WINNER"
+        
+        cards_html = f"""
+        <div style="background: rgba(16, 185, 129, 0.18); border: 2px solid #10b981; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
+            <div style="color: #34d399; font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">
+                ✅ {tier_title} (ড্র: {c_draw_str})
             </div>
-            """,
-            unsafe_allow_html=True
-        )
+            <div style="color: #cbd5e1; font-size: 0.75rem; margin-bottom: 8px;">
+                এই ড্র নম্বরের বিপরীতে আমাদের হুইলে <strong>{len(top_winning_tickets)}টি {max_hits_found}-ম্যাচ টিকিট</strong> পাওয়া গেছে। নিচে এক্সেল শিটের সঠিক রো নম্বর দেখুন:
+            </div>
+        """
+        for idx, item in enumerate(top_winning_tickets, start=1):
+            t_obj = item["ticket"]
+            s_row = t_obj["rank"] + 1
+            t_balls = " - ".join(f"{x:02d}" for x in t_obj["numbers"])
+            t_hits = " - ".join(f"{x:02d}" for x in item["matched_balls"])
+            cards_html += f"""
+            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-size: 0.75rem; line-height: 1.5;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <span style="color:#38bdf8; font-weight:bold;">#{idx}. {t_obj["id"]} (Rank #{t_obj["rank"]})</span>
+                    <span style="background:#059669; color:#ffffff; padding:1px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">Excel Row #{s_row}</span>
+                </div>
+                <div style="color:#ffffff; margin-top:3px;">• Numbers: <span style="color:#fbbf24;">{t_balls}</span></div>
+                <div style="color:#34d399; margin-top:2px;">• Matched {item['hits']} Balls: <strong>[{t_hits}]</strong></div>
+            </div>
+            """
+        cards_html += "</div>"
+        st.markdown(cards_html, unsafe_allow_html=True)
     else:
-        st.info(f"অনুগ্রহ করে {pick_size}টি ড্র নম্বর (যেমন: 1, 2, 3, 4, 5, 7) অথবা টিকিট আইডি (TK-0001) দিয়ে সার্চ দিন।")
+        st.info(f"অনুগ্রহ করে {pick_size}টি ড্র নম্বর (যেমন: 7, 12, 16, 20, 23, 27) অথবা টিকিট আইডি (TK-0001) দিয়ে সার্চ দিন।")
 
 
 # -----------------------------------------------------------------------------
