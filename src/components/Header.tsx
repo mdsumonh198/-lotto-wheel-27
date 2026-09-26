@@ -3,8 +3,8 @@ import { Download, Globe } from 'lucide-react';
 import { GuaranteeGoal } from '../types';
 
 interface HeaderProps {
-  activeTab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip';
-  setActiveTab: (tab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip') => void;
+  activeTab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip' | 'worst-case';
+  setActiveTab: (tab: 'dashboard' | 'or-theory' | 'python-source' | 'colab-mip' | 'worst-case') => void;
   onExportWheel: () => void;
   onExportBudget: () => void;
   budgetCount: number;
@@ -91,6 +91,17 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             {isBn ? 'গুগল কোলাব (MIP)' : 'Google Colab (MIP)'}
+          </button>
+          <button
+            onClick={() => setActiveTab('worst-case')}
+            className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-colors whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'worst-case'
+                ? 'bg-rose-600 text-white shadow-md shadow-rose-950/60 border border-rose-400'
+                : 'text-rose-400 bg-rose-950/30 border border-rose-800/60 hover:bg-rose-900/40 hover:text-rose-200'
+            }`}
+          >
+            <span>⚠️</span>
+            <span>{isBn ? 'Worst-Case রিস্ক টেস্ট' : 'Worst-Case Risk Test'}</span>
           </button>
         </nav>
 

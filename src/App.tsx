@@ -8,6 +8,7 @@ import { DetailTable } from './components/DetailTable';
 import { OperationsResearchPanel } from './components/OperationsResearchPanel';
 import { PythonSourcePanel } from './components/PythonSourcePanel';
 import { ColabScriptPanel } from './components/ColabScriptPanel';
+import { WorstCasePanel } from './components/WorstCasePanel';
 import {
   generateWheel,
   evaluateWheel,
@@ -15,10 +16,10 @@ import {
   calculateGoalRequirements,
 } from './wheelEngine';
 import { GameConfig } from './types';
-import { BarChart3, AlertCircle, Target } from 'lucide-react';
+import { BarChart3, AlertCircle, Target, ShieldAlert, TrendingDown, ArrowRight } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'or-theory' | 'python-source' | 'colab-mip'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'or-theory' | 'python-source' | 'colab-mip' | 'worst-case'>('dashboard');
 
   // Bangla Mode ON by default as requested
   const [lang, setLang] = useState<'bn' | 'en'>('bn');
@@ -327,6 +328,40 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Worst-Case Financial Stress-Test Callout */}
+                <div className="bg-gradient-to-r from-rose-950/60 via-[#181a24] to-amber-950/50 border-2 border-rose-500/70 rounded-2xl p-4 mb-6 shadow-xl shadow-rose-950/30">
+                  <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center shrink-0 mt-0.5">
+                        <ShieldAlert className="w-5 h-5 text-rose-400" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-rose-500 text-black uppercase">
+                            {isBn ? 'ইনভেস্টর সতর্কবার্তা' : 'INVESTOR RISK ALERT'}
+                          </span>
+                          <span className="text-xs text-rose-300 font-mono font-bold">
+                            {isBn ? `${tickets.length}টি টিকিট কিনলে Worst-Case এ কী হতে পারে?` : `Worst-Case Analysis for ${tickets.length} Tickets`}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                          {isBn
+                            ? `ড্র পুলে লেগে ৫-ম্যাচ জিতলেও জ্যাকপট ছাড়া ক্লায়েন্টের -৬৫% থেকে -৮৫% টাকা ক্ষতি হতে পারে। আর ১টি বল বাইরে গেলে -১০০% পুঁজি বিনাশ হবে!`
+                            : `Even hitting a 5-match results in a -65% to -85% net financial deficit without the jackpot. Missing 1 ball wipes out capital entirely.`}
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => setActiveTab('worst-case')}
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold font-mono transition-colors shadow-lg shadow-rose-950/60 cursor-pointer shrink-0 self-stretch md:self-auto justify-center"
+                    >
+                      <span>{isBn ? 'Worst-Case অ্যানালিসিস খুলুন' : 'Open Worst-Case Panel'}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
                 {/* Priority Ranked Detail Table */}
                 <DetailTable
                   evaluations={evaluations}
@@ -342,6 +377,15 @@ export default function App() {
               </>
             )}
           </div>
+        )}
+
+        {activeTab === 'worst-case' && (
+          <WorstCasePanel
+            totalTickets={tickets.length}
+            poolSize={gameConfig.poolSize}
+            pickSize={gameConfig.pickSize}
+            lang={lang}
+          />
         )}
 
         {activeTab === 'or-theory' && <OperationsResearchPanel />}
