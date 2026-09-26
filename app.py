@@ -1324,6 +1324,11 @@ if jackpot_budget > 0:
         unsafe_allow_html=True
     )
 
+# Define standard labels unconditionally so they are available in all code branches
+card1_label = f"🟢 {top_guarantee}-Match"
+card2_label = f"🔵 {mid_guarantee}-Match"
+card3_label = f"🟡 {low_guarantee}-Match"
+
 # Render results cards: 4 columns if Jackpot hit, otherwise 3 columns
 if jackpot_full > 0:
     card1_sub = "👑 জ্যাকপট জয়!" if jackpot_budget > 0 else f"Full: {jackpot_full}"
@@ -1356,13 +1361,10 @@ if jackpot_full > 0:
         unsafe_allow_html=True
     )
 else:
-    card1_label = f"🟢 {top_guarantee}-Match"
     card1_val = five_budget
     card1_sub = "Guaranteed ≥1" if five_budget > 0 else f"Full: {five_full} Lock"
-    card2_label = f"🔵 {mid_guarantee}-Match"
     card2_val = four_budget
     card2_full = four_full
-    card3_label = f"🟡 {low_guarantee}-Match"
     card3_val = three_budget
     card3_full = three_full
 
