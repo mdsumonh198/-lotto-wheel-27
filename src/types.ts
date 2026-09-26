@@ -12,11 +12,13 @@ export interface Ticket {
   id: string;
   numbers: number[]; // For lotto: [3, 7, 12...]. For pick_digits: [7, 7, 2] (repeats allowed, order matters)
   priorityRank: number; // 1 = highest marginal coverage
+  sheetRow?: number; // Exact Excel/CSV row number (priorityRank + 1, since row 1 is header)
 }
 
 export interface TicketEvaluation {
   id: string;
   priorityRank: number;
+  sheetRow?: number; // Exact Excel/CSV row number (priorityRank + 1)
   numbers: number[];
   matches: number; // Active match count based on chosen rule (Straight or Box)
   matchedDigits: number[];

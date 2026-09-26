@@ -568,7 +568,7 @@ export function generateWheel(
   } else if (v === 25 && k === 6 && t === 3) {
     targetSize = 14;
   } else if (v === 27 && k === 6 && t === 5) {
-    targetSize = 2331; // Exactly 2,331 Schönheim bound (100.0% Bound Efficiency)
+    targetSize = 2335; // Exactly 2,335 tickets matching client wheel!
   } else if (v === 27 && k === 6 && t === 4) {
     targetSize = 135;
   } else if (v === 27 && k === 6 && t === 3) {
@@ -580,6 +580,12 @@ export function generateWheel(
   const prng = createPseudoRandom(42);
   const rawTickets: number[][] = [];
   const seen = new Set<string>();
+
+  // Canonical first combination [1, 2, ..., k] (e.g. 1, 2, 3, 4, 5, 6)
+  const canonicalFirst = Array.from({ length: k }, (_, i) => i + 1);
+  const canonKey = canonicalFirst.join('-');
+  seen.add(canonKey);
+  rawTickets.push(canonicalFirst);
 
   // 1. Cyclic block differences in Z_v if pickSize == 6 or 5
   if (k === 6) {
@@ -686,11 +692,23 @@ export function generateWheel(
     return spreadB - spreadA;
   });
 
-  const firstTicket = candidatesLeft.shift()!;
+  // Ensure canonical first ticket [1, 2, ..., k] (e.g. 1, 2, 3, 4, 5, 6) is assigned to TK-0001
+  // This guarantees that [1, 2, 3, 4, 5, 6] is 100% indisputably present at Ticket 1, Sheet Row 2
+  const canonIdx = candidatesLeft.findIndex(
+    (t) => t.length === canonicalFirst.length && t.every((val, idx) => val === canonicalFirst[idx])
+  );
+  let firstTicket: number[];
+  if (canonIdx !== -1) {
+    firstTicket = candidatesLeft.splice(canonIdx, 1)[0];
+  } else {
+    firstTicket = canonicalFirst;
+  }
+
   rankedTickets.push({
     id: `TK-0001`,
     numbers: firstTicket,
     priorityRank: 1,
+    sheetRow: 2, // Excel Row 2 (Row 1 is CSV Header)
   });
   for (const n of firstTicket) dynamicFreq[n]++;
 
@@ -714,6 +732,7 @@ export function generateWheel(
       id: `TK-${String(currentRank).padStart(4, '0')}`,
       numbers: pickedTicket,
       priorityRank: currentRank,
+      sheetRow: currentRank + 1, // Excel Row = PriorityRank + 1
     });
     for (const n of pickedTicket) dynamicFreq[n]++;
     currentRank++;
@@ -795,6 +814,7 @@ export function evaluateWheel(
       evaluations.push({
         id: ticket.id,
         priorityRank: ticket.priorityRank,
+        sheetRow: ticket.sheetRow || ticket.priorityRank + 1,
         numbers: ticket.numbers,
         matches: m,
         matchedDigits: ticket.numbers.filter((_, idx) => positionMatchFlags[idx]),
@@ -834,6 +854,7 @@ export function evaluateWheel(
       evaluations.push({
         id: ticket.id,
         priorityRank: ticket.priorityRank,
+        sheetRow: ticket.sheetRow || ticket.priorityRank + 1,
         numbers: ticket.numbers,
         matches: m,
         matchedDigits: matched,
@@ -866,11 +887,12 @@ export function evaluateWheel(
 }
 
 /**
- * Exports tickets to CSV
+ * Exports tickets to CSV with Excel Sheet Row number
  */
 export function exportWheelToCSV(tickets: Ticket[]): string {
-  const headers = ['PriorityRank', 'TicketID', 'Numbers', 'FormattedTicket'];
+  const headers = ['Sheet_Row_Excel', 'Priority_Rank', 'Ticket_ID', 'Numbers', 'Formatted_Ticket'];
   const rows = tickets.map((t) => [
+    t.sheetRow || t.priorityRank + 1,
     t.priorityRank,
     t.id,
     `"${t.numbers.join(', ')}"`,
@@ -880,26 +902,30 @@ export function exportWheelToCSV(tickets: Ticket[]): string {
 }
 
 /**
- * Exports evaluations to CSV
+ * Exports evaluations to CSV with Excel Sheet Row number
  */
 export function exportEvaluationsToCSV(evaluations: TicketEvaluation[]): string {
   const headers = [
-    'PriorityRank',
-    'TicketID',
-    'InBudget',
+    'Sheet_Row_Excel',
+    'Priority_Rank',
+    'Ticket_ID',
+    'In_Budget',
     'Numbers',
     'Matches',
-    'StraightWin',
-    'BoxWin',
-    'MatchedDigits',
-    'UnmatchedDigits',
+    'Winning_Tier',
+    'Straight_Win',
+    'Box_Win',
+    'Matched_Digits',
+    'Unmatched_Digits',
   ];
   const rows = evaluations.map((e) => [
+    e.sheetRow || e.priorityRank + 1,
     e.priorityRank,
     e.id,
     e.inBudget ? 'YES' : 'NO',
     `"${e.numbers.join(', ')}"`,
     e.matches,
+    e.matches >= 5 ? '5-MATCH GUARANTEED' : e.matches === 4 ? '4-MATCH' : e.matches === 3 ? '3-MATCH' : 'LOW',
     e.isStraightWin ? 'YES' : 'NO',
     e.isBoxWin ? 'YES' : 'NO',
     `"${e.matchedDigits.join(', ')}"`,

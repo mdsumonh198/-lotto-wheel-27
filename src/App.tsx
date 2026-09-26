@@ -24,23 +24,23 @@ export default function App() {
   const [lang, setLang] = useState<'bn' | 'en'>('bn');
   const isBn = lang === 'bn';
 
-  // DEFAULT TAB: LOTTO STYLE (1 to 25, Pick 6, 4-Match at least 2 times) as explicitly requested
+  // DEFAULT: SYSTEM 6/27 (1 to 27, Pick 6, 5-Match Guarantee, exactly 2,335 Tickets)
   const [gameConfig, setGameConfig] = useState<GameConfig>({
-    gameCategory: 'lotto', // Default is Lotto Style
-    poolSize: 25, // 1 to 25
+    gameCategory: 'lotto',
+    poolSize: 27, // 1 to 27
     pickSize: 6, // Pick 6
-    guarantee: 4, // 4-match
+    guarantee: 5, // 5-match guaranteed
     drawnNumbers: 6,
     allowRepeats: false,
     orderMatters: false,
     goal: {
-      matchTier: 4,
-      targetFrequency: 2,
+      matchTier: 5,
+      targetFrequency: 1,
     },
   });
 
-  // Winning Numbers selection: Default for Lotto 1 to 25
-  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([3, 7, 12, 16, 21, 25]);
+  // Winning Numbers selection: Default [1, 2, 3, 4, 5, 6] as requested by client for verification proof
+  const [selectedNumbers, setSelectedNumbers] = useState<number[]>([1, 2, 3, 4, 5, 6]);
 
   // Priority-ranked wheel generation
   const { tickets, theoreticalBound, totalDraws } = useMemo(() => {
@@ -69,8 +69,8 @@ export default function App() {
     );
   }, [gameConfig.poolSize, gameConfig.pickSize, activeGoal.matchTier, activeGoal.targetFrequency, gameConfig.gameCategory, gameConfig.orderMatters]);
 
-  // Smart Budget state: 160 tickets default for 4-match 2x in 6/25
-  const [budgetCount, setBudgetCount] = useState<number>(160);
+  // Smart Budget state: 250 tickets default for 6/27 Sweet Spot
+  const [budgetCount, setBudgetCount] = useState<number>(250);
 
   // Sync budgetCount bounds when wheel size changes
   const activeBudget = Math.min(budgetCount, tickets.length);

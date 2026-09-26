@@ -13,7 +13,7 @@ Engineered strictly for mobile smartphones (iOS & Android) with zero clutter.
 - 3 Simple Bulletproof Steps:
     Step 1: Choose Budget (Compact 2x2 Grid: [🟢 Stop 1] [🔵 Stop 2] / [🟠 Stop 3] [🏆 Full])
     Step 2: Select Numbers (Compact circular balls 1 to v in 7-column grid)
-    Step 3: Instant Win Results & Full Wheel CSV Download
+    Step 3: Instant Win Results, Exact 5/4/3 Match Ticket Lists & Full Wheel Browser
 - 100% Guaranteed Dark UI: Zero washed-out white button backgrounds
 \"\"\"
 
