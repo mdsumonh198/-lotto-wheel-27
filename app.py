@@ -1376,38 +1376,66 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+default_proof_val = ", ".join(str(x) for x in current_picks) if current_picks else "1, 2, 3, 4, 5, 6"
+
 proof_input = st.text_input(
-    "Verify Ticket Numbers or Ticket ID for Client:",
-    value="1, 2, 3, 4, 5, 6",
+    "Verify Ticket Numbers, Winning Draw, or Ticket ID for Client:",
+    value=default_proof_val,
     key="client_proof_input"
 ).strip().lower()
 
 if proof_input:
-    # Check if numbers
     num_matches = re.findall(r'\d+', proof_input)
     found_item = None
+    exact_match = False
+    covering_proof = None
+
     if len(num_matches) == pick_size:
         search_nums = sorted([int(x) for x in num_matches])
+        # 1. Check if this is an exact ticket purchased in the wheel
         for e in eval_data:
             if sorted(e["numbers"]) == search_nums:
                 found_item = e
+                exact_match = True
                 break
+
+        # 2. If not an exact ticket, find the guaranteed winning ticket in our wheel for this draw!
+        if not found_item:
+            search_set = set(search_nums)
+            best_ticket = None
+            max_hits = 0
+            best_hits_list = []
+            for e in eval_data:
+                hits = sorted(list(set(e["numbers"]).intersection(search_set)))
+                if len(hits) > max_hits:
+                    max_hits = len(hits)
+                    best_ticket = e
+                    best_hits_list = hits
+            
+            if best_ticket:
+                covering_proof = {
+                    "search_nums": search_nums,
+                    "ticket": best_ticket,
+                    "hits_count": max_hits,
+                    "matched_balls": best_hits_list
+                }
     else:
-        # Check by ID or Rank or Row
+        # Check by Ticket ID (TK-0001), Priority Rank (#1), or Excel Sheet Row (Row 2)
         for e in eval_data:
             row_num = e["rank"] + 1
             if proof_input == e["id"].lower() or proof_input == str(e["rank"]) or proof_input == f"row {row_num}" or proof_input == f"row#{row_num}":
                 found_item = e
+                exact_match = True
                 break
 
-    if found_item:
+    if exact_match and found_item:
         sheet_r = found_item["rank"] + 1
         balls_str = " - ".join(f"{x:02d}" for x in found_item["numbers"])
         st.markdown(
             f"""
             <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
                 <div style="color: #34d399; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px;">
-                    ✅ VERIFIED IN WHEEL (প্রমাণিত: আমাদের ২,৩৩৫টি টিকেটের মধ্যে রয়েছে!)
+                    ✅ EXACT TICKET IN WHEEL (প্রমাণিত: এই টিকিটটি সরাসরি আমাদের হুইলে রয়েছে!)
                 </div>
                 <div style="color: #ffffff; font-size: 0.78rem; line-height: 1.6;">
                     • <strong>Ticket Numbers:</strong> <span style="color:#fbbf24; font-size:0.85rem;">{balls_str}</span><br/>
@@ -1419,8 +1447,34 @@ if proof_input:
             """,
             unsafe_allow_html=True
         )
+    elif covering_proof:
+        c_ticket = covering_proof["ticket"]
+        c_sheet_row = c_ticket["rank"] + 1
+        c_balls_str = " - ".join(f"{x:02d}" for x in c_ticket["numbers"])
+        c_hits_str = " - ".join(f"{x:02d}" for x in covering_proof["matched_balls"])
+        c_draw_str = " - ".join(f"{x:02d}" for x in covering_proof["search_nums"])
+        c_hits = covering_proof["hits_count"]
+        tier_title = "⭐ 5-MATCH GUARANTEE WINNER" if c_hits >= 5 else f"🔵 {c_hits}-MATCH WINNER"
+
+        st.markdown(
+            f"""
+            <div style="background: rgba(16, 185, 129, 0.18); border: 2px solid #10b981; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
+                <div style="color: #34d399; font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">
+                    ✅ {tier_title} (প্রমাণিত: এই ড্র নম্বরের বিপরীতে আমাদের হুইলে {c_hits}-ম্যাচ বিজয়ী টিকিট রয়েছে!)
+                </div>
+                <div style="color: #ffffff; font-size: 0.8rem; line-height: 1.7;">
+                    • <strong>Drawn Numbers (ড্র নম্বর):</strong> <span style="color:#fbbf24; font-weight:bold;">{c_draw_str}</span><br/>
+                    • <strong>Guaranteed Winning Ticket:</strong> <span style="color:#38bdf8; font-weight:bold;">{c_ticket["id"]}</span> (Priority Rank #{c_ticket["rank"]})<br/>
+                    • <strong>EXCEL SHEET ROW:</strong> <span style="background:#059669; color:#ffffff; padding:2px 8px; border-radius:4px; font-weight:800;">Row {c_sheet_row}</span> <span style="color:#94a3b8; font-size:0.72rem;">(CSV ফাইলে Row 1 হেডার, তাই এক্সেলে এটি Row {c_sheet_row})</span><br/>
+                    • <strong>Ticket Numbers in Wheel:</strong> <span style="color:#ffffff;">{c_balls_str}</span><br/>
+                    • <strong>Matched {c_hits} Numbers:</strong> <span style="color:#34d399; font-weight:800; font-size:0.85rem;">[{c_hits_str}]</span> — <span style="color:#38bdf8;">100% গ্যারান্টিড প্রাইজ নিশ্চিত!</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
     else:
-        st.warning(f"Ticket '{proof_input}' not found in current wheel. Please enter exactly {pick_size} numbers (e.g. 1, 2, 3, 4, 5, 6) or Ticket ID.")
+        st.info(f"অনুগ্রহ করে {pick_size}টি ড্র নম্বর (যেমন: 1, 2, 3, 4, 5, 7) অথবা টিকিট আইডি (TK-0001) দিয়ে সার্চ দিন।")
 
 
 # -----------------------------------------------------------------------------

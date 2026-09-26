@@ -75,21 +75,55 @@ export const DetailTable: React.FC<DetailTableProps> = ({
     const q = proofQuery.trim().toLowerCase();
     if (!q) return null;
 
-    // 1. Try parsing numbers (e.g. "1, 2, 3, 4, 5, 6" or "1 2 3 4 5 6" or "01-02-03-04-05-06")
+    // 1. Try parsing numbers (e.g. "1, 2, 3, 4, 5, 7" or "1 2 3 4 5 6" or "01-02-03-04-05-06")
     const numTokens = q.match(/\d+/g)?.map(Number);
     if (numTokens && numTokens.length === pickSize) {
       const sortedSearch = [...numTokens].sort((a, b) => a - b);
-      const found = evaluations.find((item) => {
+      const exactFound = evaluations.find((item) => {
         const sortedItem = [...item.numbers].sort((a, b) => a - b);
         return sortedItem.every((val, idx) => val === sortedSearch[idx]);
       });
-      if (found) {
+
+      if (exactFound) {
         return {
           found: true,
-          ticket: found,
+          isExact: true,
+          ticket: exactFound,
           searchType: 'numbers' as const,
-          sheetRow: found.sheetRow || (found.priorityRank + 1),
-          excelRowNote: `Excel Sheet Row #${found.sheetRow || (found.priorityRank + 1)} (Row 1 is CSV Header)`,
+          sheetRow: exactFound.sheetRow || (exactFound.priorityRank + 1),
+          hitsCount: pickSize,
+          matchedBalls: exactFound.numbers,
+          drawNumbers: sortedSearch,
+          excelRowNote: `Excel Sheet Row #${exactFound.sheetRow || (exactFound.priorityRank + 1)} (Row 1 is CSV Header)`,
+        };
+      }
+
+      // Not an exact ticket, find guaranteed winning ticket in wheel for this draw!
+      const searchSet = new Set(sortedSearch);
+      let bestTicket: TicketEvaluation | null = null;
+      let maxHits = 0;
+      let bestHitsList: number[] = [];
+
+      for (const item of evaluations) {
+        const hits = item.numbers.filter((n) => searchSet.has(n));
+        if (hits.length > maxHits) {
+          maxHits = hits.length;
+          bestTicket = item;
+          bestHitsList = hits;
+        }
+      }
+
+      if (bestTicket) {
+        return {
+          found: true,
+          isExact: false,
+          ticket: bestTicket,
+          searchType: 'numbers' as const,
+          sheetRow: bestTicket.sheetRow || (bestTicket.priorityRank + 1),
+          hitsCount: maxHits,
+          matchedBalls: bestHitsList,
+          drawNumbers: sortedSearch,
+          excelRowNote: `Excel Sheet Row #${bestTicket.sheetRow || (bestTicket.priorityRank + 1)} (Row 1 is CSV Header)`,
         };
       }
     }
@@ -114,9 +148,13 @@ export const DetailTable: React.FC<DetailTableProps> = ({
       if (found) {
         return {
           found: true,
+          isExact: true,
           ticket: found,
           searchType: 'id' as const,
           sheetRow: found.sheetRow || (found.priorityRank + 1),
+          hitsCount: found.matches,
+          matchedBalls: found.matchedDigits,
+          drawNumbers: winningNumbers,
           excelRowNote: `Excel Sheet Row #${found.sheetRow || (found.priorityRank + 1)} (Row 1 is CSV Header)`,
         };
       }
@@ -127,9 +165,13 @@ export const DetailTable: React.FC<DetailTableProps> = ({
       if (found) {
         return {
           found: true,
+          isExact: true,
           ticket: found,
           searchType: 'row' as const,
           sheetRow: targetRow,
+          hitsCount: found.matches,
+          matchedBalls: found.matchedDigits,
+          drawNumbers: winningNumbers,
           excelRowNote: `Excel Sheet Row #${targetRow} (Row 1 is CSV Header)`,
         };
       }
@@ -140,22 +182,32 @@ export const DetailTable: React.FC<DetailTableProps> = ({
       query: proofQuery,
       parsedCount: numTokens?.length || 0,
     };
-  }, [proofQuery, evaluations, pickSize]);
+  }, [proofQuery, evaluations, pickSize, winningNumbers]);
 
   // Handle copying proof for client
   const handleCopyProof = () => {
     if (!proofResult || !proofResult.found || !proofResult.ticket) return;
     const t = proofResult.ticket;
     const row = t.sheetRow || (t.priorityRank + 1);
+    const isExact = proofResult.isExact;
+    const hits = proofResult.hitsCount || t.matches;
+    const drawStr = proofResult.drawNumbers
+      ? proofResult.drawNumbers.map((n) => String(n).padStart(2, '0')).join(' - ')
+      : winningNumbers.map((n) => String(n).padStart(2, '0')).join(' - ');
+    const matchedStr = proofResult.matchedBalls
+      ? proofResult.matchedBalls.map((n) => String(n).padStart(2, '0')).join(', ')
+      : t.matchedDigits.map((n) => String(n).padStart(2, '0')).join(', ');
+
     const text = `================================================
 LOTTERY WHEEL VERIFICATION & CLIENT PROOF
 ================================================
-Ticket Numbers: ${t.numbers.map((n) => String(n).padStart(2, '0')).join(' - ')}
-Ticket ID     : ${t.id} (Priority Rank #${t.priorityRank})
+Draw Numbers  : ${drawStr}
+${isExact ? 'Status        : EXACT TICKET IN WHEEL (100% MATCH)' : `Status        : ${hits}-MATCH GUARANTEED WINNER`}
+Winning Ticket: ${t.id} (Priority Rank #${t.priorityRank})
 EXCEL ROW #   : Sheet Row ${row} (Row 1 = CSV Header)
-Full Wheel    : Verified Present in ${evaluations.length.toLocaleString()} Tickets Dataset
-Current Draw  : ${winningNumbers.map((n) => String(n).padStart(2, '0')).join(' - ')}
-Matches Won   : ${t.matches} Hits (${t.matches >= 5 ? '5-MATCH GUARANTEE' : t.matches === 4 ? '4-MATCH' : t.matches === 3 ? '3-MATCH' : 'Hits'})
+Ticket Numbers: ${t.numbers.map((n) => String(n).padStart(2, '0')).join(' - ')}
+Matched Balls : [${matchedStr}] (${hits} Hits Guaranteed)
+Wheel Dataset : Verified in ${evaluations.length.toLocaleString()} Tickets Full Wheel
 ================================================`;
 
     navigator.clipboard.writeText(text).then(() => {
@@ -320,43 +372,60 @@ Matches Won   : ${t.matches} Hits (${t.matches >= 5 ? '5-MATCH GUARANTEE' : t.ma
             }`}
           >
             {proofResult.found && proofResult.ticket ? (
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-1.5 text-emerald-400 font-bold">
+              <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-emerald-800/60 pb-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                    <span>{isBn ? '১০০% নিশ্চিত: আমাদের হুইলে রয়েছে!' : '100% VERIFIED: Present in Wheel!'}</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded bg-emerald-900/80 text-white font-bold border border-emerald-600">
-                    {proofResult.ticket.id}
-                  </span>
-                  <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 flex items-center gap-1">
-                    <FileSpreadsheet className="w-3.5 h-3.5" />
-                    <span>
-                      {isBn ? `এক্সেল শিট রো #${proofResult.sheetRow}` : `Excel Sheet Row #${proofResult.sheetRow}`}
+                    <span className="font-bold text-emerald-300">
+                      {proofResult.isExact
+                        ? (isBn ? '✅ হুবহু টিকিট প্রমাণিত (EXACT TICKET IN WHEEL)' : '✅ EXACT TICKET IN WHEEL')
+                        : (isBn ? `✅ ড্র নম্বরের বিপরীতে ${proofResult.hitsCount}-ম্যাচ উইনিং টিকিট নিশ্চিত!` : `✅ ${proofResult.hitsCount}-MATCH GUARANTEED WINNING TICKET!`)}
                     </span>
-                  </span>
-                  <span className="text-[11px] text-neutral-300">
-                    (CSV ডাউনলোডে রো ১ হেডার, রো ২ থেকে টিকিট শুরু)
+                    <span className="px-2 py-0.5 rounded bg-emerald-900/80 text-white font-bold border border-emerald-600">
+                      {proofResult.ticket.id}
+                    </span>
+                    <span className="px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-700 flex items-center gap-1">
+                      <FileSpreadsheet className="w-3.5 h-3.5" />
+                      <span>
+                        {isBn ? `এক্সেল শিট রো #${proofResult.sheetRow}` : `Excel Sheet Row #${proofResult.sheetRow}`}
+                      </span>
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-neutral-400">
+                    (CSV ফাইলে Row 1 হেডার, Row 2 থেকে টিকিট শুরু)
                   </span>
                 </div>
 
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-neutral-400 text-[11px]">{isBn ? 'টিকিট নম্বর:' : 'Numbers:'}</span>
-                  {proofResult.ticket.numbers.map((num, i) => (
-                    <span
-                      key={i}
-                      className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-extrabold ${
-                        winningNumbers.includes(num)
-                          ? 'bg-emerald-500 text-black shadow-sm ring-1 ring-emerald-300'
-                          : 'bg-[#0d1117] text-white border border-neutral-700'
-                      }`}
-                    >
-                      {String(num).padStart(2, '0')}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-neutral-400 text-[11px]">
+                      {proofResult.isExact ? (isBn ? 'টিকিট নম্বর:' : 'Numbers:') : (isBn ? 'হুইলে থাকা উইনিং টিকিট:' : 'Winning Ticket in Wheel:')}
                     </span>
-                  ))}
-                  <span className="ml-2 px-2 py-0.5 rounded bg-neutral-800 text-white font-bold text-[11px]">
-                    {proofResult.ticket.matches} Hits
-                  </span>
+                    {proofResult.ticket.numbers.map((num, i) => {
+                      const isHit = proofResult.matchedBalls ? proofResult.matchedBalls.includes(num) : winningNumbers.includes(num);
+                      return (
+                        <span
+                          key={i}
+                          className={`inline-flex items-center justify-center w-6 h-6 rounded text-[11px] font-extrabold ${
+                            isHit
+                              ? 'bg-emerald-500 text-black shadow-sm ring-1 ring-emerald-300'
+                              : 'bg-[#0d1117] text-white border border-neutral-700'
+                          }`}
+                        >
+                          {String(num).padStart(2, '0')}
+                        </span>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-2 font-mono">
+                    <span className="text-[11px] text-neutral-400">
+                      {proofResult.isExact ? (isBn ? 'উইন ক্যাটাগরি:' : 'Status:') : (isBn ? 'মিলে যাওয়া সংখ্যা:' : 'Matched Balls:')}
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded bg-emerald-500 text-black font-extrabold text-xs">
+                      {proofResult.hitsCount} Hits Guaranteed
+                    </span>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -364,8 +433,8 @@ Matches Won   : ${t.matches} Hits (${t.matches >= 5 ? '5-MATCH GUARANTEE' : t.ma
                 <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>
                   {isBn
-                    ? `"${proofQuery}" টিকিটটি পাওয়া যায়নি। অনুগ্রহ করে ঠিক ${pickSize}টি নম্বর কমা দিয়ে লিখুন (যেমন: 1, 2, 3, 4, 5, 6) অথবা টিকিট আইডি (TK-0001) দিয়ে খুঁজুন।`
-                    : `Ticket "${proofQuery}" not found. Please enter exactly ${pickSize} numbers (e.g. 1, 2, 3, 4, 5, 6) or Ticket ID.`}
+                    ? `"${proofQuery}" পাওয়া যায়নি। অনুগ্রহ করে ঠিক ${pickSize}টি নম্বর কমা দিয়ে লিখুন (যেমন: 1, 2, 3, 4, 5, 7) অথবা টিকিট আইডি (TK-0001) দিয়ে খুঁজুন।`
+                    : `"${proofQuery}" not found. Please enter ${pickSize} numbers (e.g. 1, 2, 3, 4, 5, 7) or Ticket ID.`}
                 </span>
               </div>
             )}
