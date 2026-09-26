@@ -1536,52 +1536,32 @@ if proof_to_process:
     if exact_match and found_item:
         sheet_r = found_item["rank"] + 1
         balls_str = " - ".join(f"{x:02d}" for x in found_item["numbers"])
-        st.markdown(
-            f"""
-            <div style="background: rgba(16, 185, 129, 0.15); border: 1.5px solid #10b981; border-radius: 8px; padding: 12px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
-                <div style="color: #34d399; font-weight: 800; font-size: 0.85rem; margin-bottom: 6px;">
-                    ✅ EXACT TICKET IN WHEEL (প্রমাণিত: এই টিকিটটি সরাসরি আমাদের হুইলে রয়েছে!)
-                </div>
-                <div style="color: #ffffff; font-size: 0.78rem; line-height: 1.6;">
-                    • <strong>Ticket Numbers:</strong> <span style="color:#fbbf24; font-size:0.85rem;">{balls_str}</span><br/>
-                    • <strong>Ticket ID:</strong> <span style="color:#38bdf8;">{found_item["id"]}</span> (Priority Rank #{found_item["rank"]})<br/>
-                    • <strong>EXCEL SHEET ROW:</strong> <span style="background:#059669; color:#ffffff; padding:2px 8px; border-radius:4px; font-weight:800;">Row {sheet_r}</span> <span style="color:#94a3b8; font-size:0.72rem;">(CSV ফাইলে Row 1 হেডার, তাই এক্সেলে এটি Row {sheet_r})</span><br/>
-                    • <strong>Current Draw Hits:</strong> <span style="color:#34d399; font-weight:700;">{found_item["matches"]} Hits</span> ({", ".join(f"{x:02d}" for x in found_item["matched_digits"]) if found_item["matched_digits"] else "None"})
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
+        matched_str = ", ".join(f"{x:02d}" for x in found_item["matched_digits"]) if found_item["matched_digits"] else "None"
+        st.success(
+            f"### ✅ EXACT TICKET IN WHEEL (হুবহু টিকিট প্রমাণিত!)\n\n"
+            f"• **Ticket Numbers:** `{balls_str}`\n\n"
+            f"• **Ticket ID:** `{found_item['id']}` (Priority Rank #{found_item['rank']})\n\n"
+            f"• **EXCEL SHEET ROW:** 📊 **Row {sheet_r}** *(CSV ফাইলে Row 1 হেডার, তাই এক্সেলে এটি Row {sheet_r})*\n\n"
+            f"• **Current Draw Hits:** **{found_item['matches']} Hits** ({matched_str})"
         )
     elif top_winning_tickets:
         c_draw_str = " - ".join(f"{x:02d}" for x in search_nums)
         tier_title = "⭐ 5-MATCH GUARANTEE WINNER" if max_hits_found >= 5 else f"🔵 {max_hits_found}-MATCH WINNER"
         
-        cards_html = f"""
-        <div style="background: rgba(16, 185, 129, 0.18); border: 2px solid #10b981; border-radius: 8px; padding: 14px; margin-bottom: 12px; font-family: ui-monospace, monospace;">
-            <div style="color: #34d399; font-weight: 800; font-size: 0.9rem; margin-bottom: 6px;">
-                ✅ {tier_title} (ড্র: {c_draw_str})
-            </div>
-            <div style="color: #cbd5e1; font-size: 0.75rem; margin-bottom: 8px;">
-                এই ড্র নম্বরের বিপরীতে আমাদের হুইলে <strong>{len(top_winning_tickets)}টি {max_hits_found}-ম্যাচ টিকিট</strong> পাওয়া গেছে। নিচে এক্সেল শিটের সঠিক রো নম্বর দেখুন:
-            </div>
-        """
+        st.success(
+            f"### ✅ {tier_title} (ড্র: `{c_draw_str}`)\n\n"
+            f"এই ড্র নম্বরের বিপরীতে আমাদের হুইলে **{len(top_winning_tickets)}টি {max_hits_found}-ম্যাচ টিকিট** পাওয়া গেছে। নিচে এক্সেল শিটের সঠিক রো (Row) নম্বর দেখুন:"
+        )
         for idx, item in enumerate(top_winning_tickets, start=1):
             t_obj = item["ticket"]
             s_row = t_obj["rank"] + 1
             t_balls = " - ".join(f"{x:02d}" for x in t_obj["numbers"])
             t_hits = " - ".join(f"{x:02d}" for x in item["matched_balls"])
-            cards_html += f"""
-            <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(16,185,129,0.3); border-radius: 6px; padding: 8px 10px; margin-top: 6px; font-size: 0.75rem; line-height: 1.5;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="color:#38bdf8; font-weight:bold;">#{idx}. {t_obj["id"]} (Rank #{t_obj["rank"]})</span>
-                    <span style="background:#059669; color:#ffffff; padding:1px 8px; border-radius:4px; font-weight:800; font-size:0.75rem;">Excel Row #{s_row}</span>
-                </div>
-                <div style="color:#ffffff; margin-top:3px;">• Numbers: <span style="color:#fbbf24;">{t_balls}</span></div>
-                <div style="color:#34d399; margin-top:2px;">• Matched {item['hits']} Balls: <strong>[{t_hits}]</strong></div>
-            </div>
-            """
-        cards_html += "</div>"
-        st.markdown(cards_html, unsafe_allow_html=True)
+            st.info(
+                f"**#{idx}. {t_obj['id']} (Rank #{t_obj['rank']})** — 📊 **Excel Sheet Row #{s_row}**\n\n"
+                f"• **Ticket Numbers:** `{t_balls}`\n\n"
+                f"• **Matched {item['hits']} Balls:** `[{t_hits}]` ✅ *(100% গ্যারান্টিড প্রাইজ নিশ্চিত!)*"
+            )
     else:
         st.info(f"অনুগ্রহ করে {pick_size}টি ড্র নম্বর (যেমন: 7, 12, 16, 20, 23, 27) অথবা টিকিট আইডি (TK-0001) দিয়ে সার্চ দিন।")
 
