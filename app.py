@@ -395,6 +395,12 @@ div[data-testid="stDownloadButton"] button * {
     border: 1px solid rgba(16, 185, 129, 0.4);
 }
 
+.result-card.gold {
+    background: linear-gradient(180deg, rgba(234, 179, 8, 0.2) 0%, rgba(13, 17, 24, 0.95) 100%);
+    border: 1.5px solid rgba(234, 179, 8, 0.75);
+    box-shadow: 0 0 14px rgba(234, 179, 8, 0.25);
+}
+
 .result-card.blue {
     background: linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(13, 17, 24, 0.9) 100%);
     border: 1px solid rgba(56, 189, 248, 0.4);
@@ -1284,47 +1290,104 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-if pick_size == 6:
-    card1_label = "🟢 5-Match"
-    card1_val = counts_budget[5]
-    card2_label = "🔵 4-Match"
-    card2_val = counts_budget[4]
-    card2_full = counts_full[4]
-    card3_label = "🟡 3-Match"
-    card3_val = counts_budget[3]
-    card3_full = counts_full[3]
+jackpot_budget = counts_budget.get(pick_size, 0)
+jackpot_full = counts_full.get(pick_size, 0)
+five_budget = counts_budget.get(5, 0) if pick_size == 6 else counts_budget.get(top_guarantee, 0)
+five_full = counts_full.get(5, 0) if pick_size == 6 else counts_full.get(top_guarantee, 0)
+four_budget = counts_budget.get(4, 0) if pick_size == 6 else counts_budget.get(mid_guarantee, 0)
+four_full = counts_full.get(4, 0) if pick_size == 6 else counts_full.get(mid_guarantee, 0)
+three_budget = counts_budget.get(3, 0) if pick_size == 6 else counts_budget.get(low_guarantee, 0)
+three_full = counts_full.get(3, 0) if pick_size == 6 else counts_full.get(low_guarantee, 0)
+
+# If 6/6 Jackpot was hit, show a special golden banner explaining 100% guarantee fulfillment
+if jackpot_budget > 0:
+    st.markdown(
+        f"""
+        <div style="background: linear-gradient(135deg, rgba(234, 179, 8, 0.22) 0%, rgba(16, 185, 129, 0.16) 100%); border: 2px solid #eab308; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px;">
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+                <span style="font-size:1.6rem; line-height:1;">👑</span>
+                <div>
+                    <div style="color:#fbbf24; font-weight:900; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+                        <span>DIRECT {pick_size}/{pick_size} JACKPOT HIT! ({jackpot_budget} টি সরাসরি জ্যাকপট জয়!)</span>
+                        <span style="background:#eab308; color:#000000; font-size:0.65rem; font-weight:900; padding:1px 6px; border-radius:4px;">100% SUCCESS</span>
+                    </div>
+                    <div style="color:#e2e8f0; font-size:0.75rem; margin-top:4px; line-height:1.5;">
+                        🎉 <strong>গাণিতিক ব্যাখ্যা (ক্লায়েন্ট ও বিনিয়োগকারীদের জন্য):</strong><br/>
+                        লটারির হুইলিং নিয়মে ৫-ম্যাচ গ্যারান্টি বলতে বোঝায়: পুলের মধ্যে ড্র নম্বরগুলো থাকলে কমপক্ষে ১টি টিকিট <strong>৫ বা তদূর্ধ্ব (≥৫) ম্যাচ</strong> পাবে।
+                        এখানে আপনার টিকিটে সবকটি ৬টি নম্বরই মিলে গিয়ে <strong>সরাসরি ৬/৬ জ্যাকপট</strong> জয় করেছে!
+                        লটারিতে ৫-ম্যাচের চেয়ে ৬-ম্যাচ জ্যাকপট হলো সর্বোচ্চ পুরস্কার। তাই ৫-ম্যাচ অতিক্রম করে সরাসরি জ্যাকপট জয় হওয়ায় আপনার গ্যারান্টি <strong>১০০% সফল ও সর্বোচ্চ সীমায় উত্তীর্ণ!</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Render results cards: 4 columns if Jackpot hit, otherwise 3 columns
+if jackpot_full > 0:
+    card1_sub = "👑 জ্যাকপট জয়!" if jackpot_budget > 0 else f"Full: {jackpot_full}"
+    card2_sub = "জ্যাকপটে উন্নীত" if (five_budget == 0 and jackpot_budget > 0) else f"Full: {five_full}"
+    st.markdown(
+        f"""
+        <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:6px; margin-bottom:10px;">
+            <div class="result-card gold">
+                <span class="res-label" style="color:#fbbf24;">👑 {pick_size}/{pick_size} Jackpot</span>
+                <span class="res-val" style="color:#fbbf24;">{jackpot_budget}</span>
+                <span class="res-sub" style="color:#fde047;">{card1_sub}</span>
+            </div>
+            <div class="result-card highlight">
+                <span class="res-label">🟢 5-Match</span>
+                <span class="res-val">{five_budget}</span>
+                <span class="res-sub">{card2_sub}</span>
+            </div>
+            <div class="result-card blue">
+                <span class="res-label">🔵 4-Match</span>
+                <span class="res-val">{four_budget}</span>
+                <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {four_full}</span>
+            </div>
+            <div class="result-card amber">
+                <span class="res-label">🟡 3-Match</span>
+                <span class="res-val">{three_budget}</span>
+                <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {three_full}</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 else:
     card1_label = f"🟢 {top_guarantee}-Match"
-    card1_val = counts_budget[top_guarantee]
+    card1_val = five_budget
+    card1_sub = "Guaranteed ≥1" if five_budget > 0 else f"Full: {five_full} Lock"
     card2_label = f"🔵 {mid_guarantee}-Match"
-    card2_val = counts_budget[mid_guarantee]
-    card2_full = counts_full[mid_guarantee]
+    card2_val = four_budget
+    card2_full = four_full
     card3_label = f"🟡 {low_guarantee}-Match"
-    card3_val = counts_budget[low_guarantee]
-    card3_full = counts_full[low_guarantee]
+    card3_val = three_budget
+    card3_full = three_full
 
-st.markdown(
-    f"""
-    <div class="results-grid">
-        <div class="result-card highlight">
-            <span class="res-label">{card1_label}</span>
-            <span class="res-val">{card1_val}</span>
-            <span class="res-sub">Guaranteed ≥1</span>
+    st.markdown(
+        f"""
+        <div class="results-grid">
+            <div class="result-card highlight">
+                <span class="res-label">{card1_label}</span>
+                <span class="res-val">{card1_val}</span>
+                <span class="res-sub">{card1_sub}</span>
+            </div>
+            <div class="result-card blue">
+                <span class="res-label">{card2_label}</span>
+                <span class="res-val">{card2_val}</span>
+                <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {card2_full}</span>
+            </div>
+            <div class="result-card amber">
+                <span class="res-label">{card3_label}</span>
+                <span class="res-val">{card3_val}</span>
+                <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {card3_full}</span>
+            </div>
         </div>
-        <div class="result-card blue">
-            <span class="res-label">{card2_label}</span>
-            <span class="res-val">{card2_val}</span>
-            <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {card2_full}</span>
-        </div>
-        <div class="result-card amber">
-            <span class="res-label">{card3_label}</span>
-            <span class="res-val">{card3_val}</span>
-            <span style="font-size:0.6rem; color:#94a3b8; font-weight:600;">Full: {card3_full}</span>
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+        """,
+        unsafe_allow_html=True
+    )
 
 if counts_budget.get(pick_size, 0) > 0:
     st.balloons()
@@ -1495,6 +1558,11 @@ def render_ticket_row_html(item: Dict[str, Any], winning_nums: Set[int]) -> str:
     rank = item["rank"]
     sheet_row = rank + 1  # Row 1 is Header in Excel/CSV
     badge_class = "m5" if m >= 5 else "m4" if m == 4 else "m3" if m == 3 else "m-low"
+    if m == pick_size:
+        badge_html = f'<span class="match-badge" style="background:#eab308; color:#000000; font-weight:900; border:1px solid #fde047;">👑 {m}/{m} JACKPOT</span>'
+    else:
+        badge_html = f'<span class="match-badge {badge_class}">{m} Hits</span>'
+
     balls_html = "".join([
         f'<span class="t-num {"hit" if num in winning_nums else ""}">{num:02d}</span>'
         for num in item["numbers"]
@@ -1512,9 +1580,36 @@ def render_ticket_row_html(item: Dict[str, Any], winning_nums: Set[int]) -> str:
             </div>
             <div class="ticket-nums">{balls_html}</div>
         </div>
-        <span class="match-badge {badge_class}">{m} Hits</span>
+        {badge_html}
     </div>
     """
+
+# 6/6 Jackpot tickets
+tier_jackpot_tickets = [e for e in eval_data if e["matches"] == pick_size]
+tier_jackpot_budget = [e for e in tier_jackpot_tickets if e["in_budget"]]
+
+if tier_jackpot_tickets:
+    st.markdown(
+        f"""
+        <div class="tier-box" style="background: linear-gradient(180deg, rgba(234, 179, 8, 0.18) 0%, rgba(13, 17, 24, 0.95) 100%); border: 2px solid rgba(234, 179, 8, 0.8);">
+            <div class="tier-box-header">
+                <span class="tier-box-title" style="color: #fbbf24; font-size:0.9rem;">
+                    <span>👑</span>
+                    <span>DIRECT {pick_size}/{pick_size} JACKPOT WINNING TICKETS (সরাসরি ৬/৬ জ্যাকপট)</span>
+                </span>
+                <span class="tier-box-count" style="background:#eab308; color:#000000; font-weight:900;">
+                    {len(tier_jackpot_budget)} in budget · {len(tier_jackpot_tickets)} in full wheel
+                </span>
+            </div>
+            <div style="font-size:0.75rem; color:#fde047; margin-bottom:8px; line-height:1.4;">
+                🎉 <strong>সর্বোচ্চ প্রাইজ নিশ্চিত:</strong> এই টিকিটে সবকটি {pick_size}টি ড্র নম্বরই হুবহু মিলে গেছে! ৫-ম্যাচ গ্যারান্টি (≥৫) পূর্ণ করে সরাসরি ৬/৬ জ্যাকপট জয় হয়েছে।
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+    jackpot_rows_html = "".join([render_ticket_row_html(t, winning_set) for t in tier_jackpot_tickets])
+    st.markdown(jackpot_rows_html, unsafe_allow_html=True)
 
 # 5-Match (or top guarantee) tickets
 tier_top_tickets = [e for e in eval_data if e["matches"] == top_guarantee]
@@ -1527,7 +1622,7 @@ if tier_top_tickets:
             <div class="tier-box-header">
                 <span class="tier-box-title">
                     <span>⭐</span>
-                    <span>{card1_label} Guaranteed Winning Tickets</span>
+                    <span>🟢 {top_guarantee}-Match Guaranteed Winning Tickets</span>
                 </span>
                 <span class="tier-box-count" style="background:#059669; color:#ffffff;">
                     {len(tier_top_budget)} in budget · {len(tier_top_tickets)} in full wheel
@@ -1540,6 +1635,15 @@ if tier_top_tickets:
     # Render all top guarantee tickets directly
     top_rows_html = "".join([render_ticket_row_html(t, winning_set) for t in tier_top_tickets])
     st.markdown(top_rows_html, unsafe_allow_html=True)
+elif tier_jackpot_tickets:
+    st.markdown(
+        """
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.4); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; font-size: 0.75rem; color: #34d399;">
+            ℹ️ <strong>নোট:</strong> আপনার ৫-ম্যাচ গ্যারান্টিটি সরাসরি <strong>৬/৬ জ্যাকপটে (উপরের তালিকায়)</strong> উন্নীত হয়েছে। ড্র-এর সাথে টিকিটের সবকটি নম্বর মিলে যাওয়ায় এটি ৫-ম্যাচ অতিক্রম করে সর্বোচ্চ জ্যাকপট অর্জন করেছে।
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # 4-Match tickets
 tier_mid_tickets = [e for e in eval_data if e["matches"] == mid_guarantee]

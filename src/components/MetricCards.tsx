@@ -128,13 +128,25 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
                   <span>
                     {isBn ? (
                       <>
-                        🎉 আপনার নির্বাচিত শীর্ষ <strong className="text-white">{budgetCount.toLocaleString()}</strong> টিকিটের মধ্যে মোট{' '}
-                        <strong className="text-emerald-300 font-mono text-sm">{targetHitsBudget}</strong> টি টিকিটে {targetTier}-ম্যাচ হয়েছে!
-                        (টার্গেট ছিল কমপক্ষে {targetFreq}টি)। আপনার কাঙ্ক্ষিত গ্যারান্টি সম্পূর্ণ সফল!
+                        🎉 আপনার নির্বাচিত শীর্ষ <strong className="text-white">{budgetCount.toLocaleString()}</strong> টিকিটের মধ্যে{' '}
+                        {topTierHitsBudget > 0 && targetTier === 5 && (budgetMatchCounts[5] || 0) === 0 ? (
+                          <>
+                            ৫-ম্যাচ গ্যারান্টি অতিক্রম করে সরাসরি{' '}
+                            <strong className="text-yellow-300 font-mono text-sm">{topTierHitsBudget}</strong> টি টিকিট <strong className="text-yellow-300">৬/৬ জ্যাকপট (Jackpot 👑)</strong> জয় করেছে!
+                          </>
+                        ) : (
+                          <>
+                            মোট <strong className="text-emerald-300 font-mono text-sm">{targetHitsBudget}</strong> টি টিকিটে {targetTier}-ম্যাচ বা তদূর্ধ্ব প্রাইজ হয়েছে!
+                          </>
+                        )}{' '}
+                        (টার্গেট ছিল কমপক্ষে {targetFreq}টি)। আপনার কাঙ্ক্ষিত গ্যারান্টি ১০০% সফল!
                       </>
                     ) : (
                       <>
-                        Target achieved! Out of your top {budgetCount.toLocaleString()} tickets, {targetHitsBudget} tickets hit {targetTier}-match.
+                        Target achieved! Out of your top {budgetCount.toLocaleString()} tickets,{' '}
+                        {topTierHitsBudget > 0 && targetTier === 5 && (budgetMatchCounts[5] || 0) === 0
+                          ? `exceeded 5-match with ${topTierHitsBudget} Direct 6/6 Jackpot(s)!`
+                          : `${targetHitsBudget} tickets hit ${targetTier}-match or higher.`}
                       </>
                     )}
                   </span>
@@ -203,7 +215,9 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider font-mono flex items-center gap-1.5">
-              <span>🎯 {targetTier}-{isBn ? 'ম্যাচ হিট' : 'Match Hits'}</span>
+              <span>
+                🎯 {targetTier === 5 && topTierHitsBudget > 0 ? (isBn ? '৫+ ম্যাচ (জ্যাকপটসহ)' : '5+ Match (Inc. Jackpot)') : `${targetTier}-${isBn ? 'ম্যাচ হিট' : 'Match Hits'}`}
+              </span>
               <span className="px-1.5 py-0.2 text-[9px] bg-cyan-400 text-black font-extrabold rounded">
                 {isBn ? 'আপনার টার্গেট' : 'YOUR TARGET'}
               </span>
@@ -214,10 +228,18 @@ export const MetricCards: React.FC<MetricCardsProps> = ({
             <span className="text-2xl sm:text-3xl font-extrabold font-mono text-cyan-300 tabular-nums">
               {targetHitsBudget}
             </span>
-            <span className="text-xs text-cyan-400/90 font-medium">{isBn ? 'বাজেটে হিট' : 'in budget'}</span>
+            <span className="text-xs text-cyan-400/90 font-medium">
+              {targetTier === 5 && topTierHitsBudget > 0 && (budgetMatchCounts[5] || 0) === 0
+                ? (isBn ? '👑 সরাসরি জ্যাকপট' : '👑 Direct Jackpot')
+                : (isBn ? 'বাজেটে হিট' : 'in budget')}
+            </span>
           </div>
           <div className="mt-2.5 pt-2 border-t border-neutral-800 text-[11px] text-neutral-300 font-mono truncate flex items-center justify-between">
-            <span>{isBn ? `ফুল হুইলে: ${targetHitsFull}` : `Full Wheel: ${targetHitsFull}`}</span>
+            <span>
+              {targetTier === 5 && topTierHitsBudget > 0 && (budgetMatchCounts[5] || 0) === 0
+                ? (isBn ? '👑 ৬/৬ জ্যাকপটে উন্নীত' : '👑 Promoted to 6/6 Jackpot')
+                : (isBn ? `ফুল হুইলে: ${targetHitsFull}` : `Full Wheel: ${targetHitsFull}`)}
+            </span>
             <span className={isGoalAchieved ? 'text-emerald-400 font-bold' : 'text-amber-400'}>
               {isGoalAchieved ? (isBn ? 'টার্গেট অর্জিত' : 'Goal Achieved') : (isBn ? `${targetFreq} বার প্রয়োজন` : `Need ${targetFreq}x`)}
             </span>
