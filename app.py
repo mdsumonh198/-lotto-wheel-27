@@ -1538,72 +1538,52 @@ if tier_low_tickets:
 
 
 # -----------------------------------------------------------------------------
-# 6. INLINE LIVE MATCHING TICKETS LIST & FULL WHEEL BROWSING
+# 6. LIVE MATCHING TICKETS & FULL WHEEL (SUPER CLEAN & SIMPLE)
 # -----------------------------------------------------------------------------
 st.markdown(
     """
-    <div class="section-header" style="margin-top:24px;">
-        <span class="step-badge" style="background:#475569;">Complete List</span>
-        <span class="section-title">Live Matching Tickets & Full Wheel Browser</span>
+    <div class="section-header" style="margin-top:20px;">
+        <span class="step-badge" style="background:#0284c7;">Tickets</span>
+        <span class="section-title">All Tickets & Winning Numbers</span>
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# Browsing Controls Bar: Default to Full Wheel
-ctrl_col1, ctrl_col2 = st.columns(2)
-with ctrl_col1:
-    scope_option = st.radio(
-        "Display Scope:",
-        [f"🌟 Full Wheel ({len(eval_data):,} Tickets - Default)", f"Top {budget_count:,} Budget Tickets"],
-        index=0,
-        horizontal=True,
-        key="browser_scope_radio"
-    )
-with ctrl_col2:
-    filter_tier_option = st.selectbox(
-        "Prize Tier Filter:",
-        [
-            "All Tickets in Scope",
-            f"⭐ {card1_label} Only ({len(tier_top_tickets)})",
-            f"🔵 {card2_label} Only ({len(tier_mid_tickets)})",
-            f"🟡 {card3_label} Only ({len(tier_low_tickets)})",
-            f"🏆 All Winning (3+ Matches: {len(tier_top_tickets) + len(tier_mid_tickets) + len(tier_low_tickets)})",
-            "⚪ Low Hits (0-2 Matches)"
-        ],
-        key="browser_tier_select"
-    )
+# 1. Simple 1-Click Quick Filter
+n_5 = len(tier_top_tickets)
+n_4 = len(tier_mid_tickets)
+n_3 = len(tier_low_tickets)
 
-# Search box and Page Size selector
-search_col, page_size_col = st.columns([3, 2])
-with search_col:
-    search_query = st.text_input(
-        "🔍 Search Ticket #, Sheet Row, or Ball:",
-        placeholder="e.g. 138, TK-0138, row 2, or 27",
-        key="ticket_search_input"
-    ).strip().lower()
-with page_size_col:
-    page_size_option = st.selectbox(
-        "Show Per View:",
-        ["50 tickets", "100 tickets", "250 tickets", "500 tickets", "🚀 Show All Tickets"],
-        index=1,
-        key="browser_page_size_select"
-    )
+filter_choice = st.radio(
+    "Choose what to view:",
+    [
+        f"🌟 All ({len(eval_data):,})",
+        f"⭐ 5-Match ({n_5})",
+        f"🔵 4-Match ({n_4})",
+        f"🟡 3-Match ({n_3})",
+    ],
+    horizontal=True,
+    key="simple_tier_filter",
+    label_visibility="collapsed"
+)
 
-# Filter Dataset
-is_budget_scope = "Budget" in scope_option
-dataset = [e for e in eval_data if e["in_budget"]] if is_budget_scope else eval_data
+# 2. Simple Search Box
+search_query = st.text_input(
+    "🔍 Search Ticket #, Sheet Row, or Numbers:",
+    placeholder="e.g. 1 2 3 4 5 6, TK-0001, or Row 2",
+    key="ticket_search_input"
+).strip().lower()
 
-if "⭐" in filter_tier_option:
-    dataset = [e for e in dataset if e["matches"] == top_guarantee]
-elif "🔵" in filter_tier_option:
-    dataset = [e for e in dataset if e["matches"] == mid_guarantee]
-elif "🟡" in filter_tier_option:
-    dataset = [e for e in dataset if e["matches"] == low_guarantee]
-elif "🏆" in filter_tier_option:
-    dataset = [e for e in dataset if e["matches"] >= 3]
-elif "⚪" in filter_tier_option:
-    dataset = [e for e in dataset if e["matches"] < 3]
+# Filter dataset
+if "5-Match" in filter_choice:
+    dataset = [e for e in eval_data if e["matches"] >= top_guarantee]
+elif "4-Match" in filter_choice:
+    dataset = [e for e in eval_data if e["matches"] == mid_guarantee]
+elif "3-Match" in filter_choice:
+    dataset = [e for e in eval_data if e["matches"] == low_guarantee]
+else:
+    dataset = eval_data
 
 if search_query:
     dataset = [
@@ -1618,31 +1598,20 @@ if search_query:
 total_matching = len(dataset)
 
 if total_matching == 0:
-    st.info("No tickets match the selected filters or search query.")
+    st.info("কোনো টিকিট পাওয়া যায়নি। (No tickets matched your search.)")
 else:
-    # Handle Pagination or Show All
-    if page_size_option.startswith("🚀 Show All"):
-        display_tickets = dataset
-        start_idx = 0
-        end_idx = total_matching
-        st.markdown(
-            f'<div class="page-info">Showing ALL <strong>{total_matching:,}</strong> tickets without limitation.</div>',
-            unsafe_allow_html=True
-        )
-    else:
-        page_size = int(page_size_option.split()[0])
-        total_pages = max(1, math.ceil(total_matching / page_size))
-        
-        # Safe page state
-        if "curr_page_num" not in st.session_state:
-            st.session_state["curr_page_num"] = 1
-        
-        # Reset page if out of bounds
-        if st.session_state["curr_page_num"] > total_pages:
-            st.session_state["curr_page_num"] = 1
-            
-        current_page = st.session_state["curr_page_num"]
-        
+    PAGE_SIZE = 100
+    total_pages = max(1, math.ceil(total_matching / PAGE_SIZE))
+
+    if "curr_page_num" not in st.session_state:
+        st.session_state["curr_page_num"] = 1
+    if st.session_state["curr_page_num"] > total_pages:
+        st.session_state["curr_page_num"] = 1
+
+    current_page = st.session_state["curr_page_num"]
+
+    # Clean, simple pagination
+    if total_pages > 1:
         p_col1, p_col2, p_col3 = st.columns([1, 2, 1])
         with p_col1:
             if st.button("◀ Previous", key="btn_prev_pg", disabled=(current_page <= 1), use_container_width=True):
@@ -1653,76 +1622,19 @@ else:
                 st.session_state["curr_page_num"] = min(total_pages, current_page + 1)
                 st.rerun()
         with p_col2:
-            start_idx = (current_page - 1) * page_size
-            end_idx = min(start_idx + page_size, total_matching)
+            start_idx = (current_page - 1) * PAGE_SIZE
+            end_idx = min(start_idx + PAGE_SIZE, total_matching)
             st.markdown(
-                f'<div class="page-nav-badge">Page {current_page} of {total_pages} (Tickets {start_idx+1:,}–{end_idx:,} of {total_matching:,})</div>',
+                f'<div style="text-align:center; font-size:0.75rem; color:#94a3b8; font-family:ui-monospace, monospace; padding-top:8px;">Page {current_page} of {total_pages} (Tickets {start_idx+1:,}–{end_idx:,} of {total_matching:,})</div>',
                 unsafe_allow_html=True
             )
+    else:
+        start_idx = 0
+        end_idx = total_matching
 
-        display_tickets = dataset[start_idx:end_idx]
+    display_tickets = dataset[start_idx:end_idx]
 
-        if total_pages > 1:
-            jump_page = st.number_input(
-                f"Jump directly to page (1 to {total_pages}):",
-                min_value=1,
-                max_value=total_pages,
-                value=current_page,
-                step=1,
-                key="jump_page_input"
-            )
-            if jump_page != current_page:
-                st.session_state["curr_page_num"] = jump_page
-                st.rerun()
-
-    # Fast chunked rendering
-    CHUNK_SIZE = 50
-    for chunk_start in range(0, len(display_tickets), CHUNK_SIZE):
-        chunk = display_tickets[chunk_start:chunk_start + CHUNK_SIZE]
-        chunk_html_parts = []
-        for item in chunk:
-            rank = item["rank"]
-            m = item["matches"]
-
-            # Milestone dividers for sequential view
-            if rank == 1 and not search_query and "All" in filter_tier_option:
-                chunk_html_parts.append(
-                    f"""
-                    <div class="ms-divider stop1">
-                        <span>🟢 ZONE 1: Minimum Budget Entry (Top {s1} Tickets)</span>
-                        <span>High Hit Rate Locked</span>
-                    </div>
-                    """
-                )
-            elif rank == s1 and not search_query and "All" in filter_tier_option:
-                chunk_html_parts.append(
-                    f"""
-                    <div class="ms-divider stop2">
-                        <span>🔵 ZONE 2: Sweet Spot ROI ({s1+1} to {s2} Tickets)</span>
-                        <span>Multi-Hit Locked</span>
-                    </div>
-                    """
-                )
-            elif rank == s2 and not search_query and "All" in filter_tier_option:
-                chunk_html_parts.append(
-                    f"""
-                    <div class="ms-divider stop3">
-                        <span>🟠 ZONE 3: Syndicate Safe Zone ({s2+1} to {s3} Tickets)</span>
-                        <span>High Probability Zone</span>
-                    </div>
-                    """
-                )
-            elif rank == s3 and not search_query and "All" in filter_tier_option:
-                chunk_html_parts.append(
-                    f"""
-                    <div class="ms-divider stop-final">
-                        <span>🏆 FINAL ZONE: Mathematical Lock ({s3+1} to {s4} Tickets)</span>
-                        <span>100% Full Cover</span>
-                    </div>
-                    """
-                )
-
-            chunk_html_parts.append(render_ticket_row_html(item, winning_set))
-
-        st.markdown("".join(chunk_html_parts), unsafe_allow_html=True)
+    # Render clean ticket rows
+    chunk_html = "".join([render_ticket_row_html(t, winning_set) for t in display_tickets])
+    st.markdown(chunk_html, unsafe_allow_html=True)
 
