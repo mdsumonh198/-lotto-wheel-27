@@ -1734,23 +1734,44 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# 1. Simple 1-Click Quick Filter
+# 1. Modern 1-Click Tap Buttons
 n_5 = len(tier_top_tickets)
 n_4 = len(tier_mid_tickets)
 n_3 = len(tier_low_tickets)
 
-filter_choice = st.radio(
-    "Choose what to view:",
-    [
-        f"🌟 All ({len(eval_data):,})",
-        f"⭐ 5-Match ({n_5})",
-        f"🔵 4-Match ({n_4})",
-        f"🟡 3-Match ({n_3})",
-    ],
-    horizontal=True,
-    key="simple_tier_filter",
-    label_visibility="collapsed"
-)
+if "active_tier_filter" not in st.session_state:
+    st.session_state["active_tier_filter"] = "all"
+
+active_filter = st.session_state["active_tier_filter"]
+
+b_col1, b_col2, b_col3, b_col4 = st.columns(4)
+with b_col1:
+    b1_type = "primary" if active_filter == "all" else "secondary"
+    if st.button(f"🌟 All ({len(eval_data):,})", key="tap_btn_all", type=b1_type, use_container_width=True):
+        st.session_state["active_tier_filter"] = "all"
+        st.session_state["curr_page_num"] = 1
+        st.rerun()
+
+with b_col2:
+    b2_type = "primary" if active_filter == "5" else "secondary"
+    if st.button(f"⭐ 5-Match ({n_5})", key="tap_btn_5", type=b2_type, use_container_width=True):
+        st.session_state["active_tier_filter"] = "5"
+        st.session_state["curr_page_num"] = 1
+        st.rerun()
+
+with b_col3:
+    b3_type = "primary" if active_filter == "4" else "secondary"
+    if st.button(f"🔵 4-Match ({n_4})", key="tap_btn_4", type=b3_type, use_container_width=True):
+        st.session_state["active_tier_filter"] = "4"
+        st.session_state["curr_page_num"] = 1
+        st.rerun()
+
+with b_col4:
+    b4_type = "primary" if active_filter == "3" else "secondary"
+    if st.button(f"🟡 3-Match ({n_3})", key="tap_btn_3", type=b4_type, use_container_width=True):
+        st.session_state["active_tier_filter"] = "3"
+        st.session_state["curr_page_num"] = 1
+        st.rerun()
 
 # 2. Simple Search Box
 search_query = st.text_input(
@@ -1760,11 +1781,11 @@ search_query = st.text_input(
 ).strip().lower()
 
 # Filter dataset
-if "5-Match" in filter_choice:
+if active_filter == "5":
     dataset = [e for e in eval_data if e["matches"] >= top_guarantee]
-elif "4-Match" in filter_choice:
+elif active_filter == "4":
     dataset = [e for e in eval_data if e["matches"] == mid_guarantee]
-elif "3-Match" in filter_choice:
+elif active_filter == "3":
     dataset = [e for e in eval_data if e["matches"] == low_guarantee]
 else:
     dataset = eval_data
