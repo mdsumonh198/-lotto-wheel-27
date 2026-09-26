@@ -47,9 +47,18 @@ export const DetailTable: React.FC<DetailTableProps> = ({
   const [pageSize, setPageSize] = useState<number>(100);
 
   // Client Proof Inspector State
-  const [proofQuery, setProofQuery] = useState<string>('1, 2, 3, 4, 5, 6');
+  const [proofQuery, setProofQuery] = useState<string>(
+    winningNumbers && winningNumbers.length > 0 ? winningNumbers.join(', ') : '1, 2, 3, 4, 5, 6'
+  );
   const [copiedProof, setCopiedProof] = useState<boolean>(false);
   const [expandedTier, setExpandedTier] = useState<'6' | '5' | '4' | '3' | null>('6');
+
+  // Keep proofQuery 100% in sync with winning numbers from Step 2
+  React.useEffect(() => {
+    if (winningNumbers && winningNumbers.length > 0) {
+      setProofQuery(winningNumbers.join(', '));
+    }
+  }, [winningNumbers]);
 
   const targetTier = goal?.matchTier || (isDigitGame ? 3 : 5);
 

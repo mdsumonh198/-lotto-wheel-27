@@ -1432,39 +1432,58 @@ st.markdown(
 st.markdown(
     """
     <div style="font-size:0.75rem; color:#94a3b8; margin-bottom:8px;">
-        যে কোনো ড্র নম্বর (যেমন: <strong>7, 12, 16, 20, 23, 27</strong> অথবা <strong>1, 2, 3, 4, 5, 12</strong>) অথবা টিকিট আইডি (<strong>TK-0145</strong>) বা রো (<strong>Row 150</strong>) লিখে সার্চ দিন। এক্সেল শিটের কত নম্বর রো-তে কোন কোন টিকিট মিলেছে তা সরাসরি যাচাই করুন।
+        নিচে আপনার নির্বাচিত ড্র নম্বরের বিপরীতে উইনিং টিকিট এবং এক্সেল শিটের সঠিক রো (Row) নম্বর প্রদর্শিত হচ্ছে। চাইলে অন্য যে কোনো ড্র বা টিকিট আইডি দিয়েও তাৎক্ষণিক যাচাই করতে পারেন।
     </div>
     """,
     unsafe_allow_html=True
 )
 
-# Quick sample buttons to instantly test different rows
+# Keep Step 2 numbers and Proof Inspector 100% in sync
+step2_numbers_str = ", ".join(str(x) for x in current_picks) if current_picks else "1, 2, 3, 4, 5, 6"
+if st.session_state.get("last_synced_step2") != step2_numbers_str:
+    st.session_state["proof_input_field"] = step2_numbers_str
+    st.session_state["last_synced_step2"] = step2_numbers_str
+
+# Quick sample buttons to instantly test different rows across the wheel
 q_col1, q_col2, q_col3 = st.columns(3)
 with q_col1:
     if st.button("🧪 Draw A: 1, 2, 3, 4, 5, 12", key="qb_draw_a", use_container_width=True):
+        st.session_state["chosen_numbers"] = [1, 2, 3, 4, 5, 12]
         st.session_state["proof_input_field"] = "1, 2, 3, 4, 5, 12"
+        st.session_state["last_synced_step2"] = "1, 2, 3, 4, 5, 12"
         st.rerun()
 with q_col2:
     if st.button("🧪 Draw B: 7, 12, 16, 20, 23, 27", key="qb_draw_b", use_container_width=True):
+        st.session_state["chosen_numbers"] = [7, 12, 16, 20, 23, 27]
         st.session_state["proof_input_field"] = "7, 12, 16, 20, 23, 27"
+        st.session_state["last_synced_step2"] = "7, 12, 16, 20, 23, 27"
         st.rerun()
 with q_col3:
     if st.button("🧪 Draw C: 3, 8, 14, 19, 22, 26", key="qb_draw_c", use_container_width=True):
+        st.session_state["chosen_numbers"] = [3, 8, 14, 19, 22, 26]
         st.session_state["proof_input_field"] = "3, 8, 14, 19, 22, 26"
+        st.session_state["last_synced_step2"] = "3, 8, 14, 19, 22, 26"
         st.rerun()
 
-current_input_val = st.session_state.get(
-    "proof_input_field",
-    ", ".join(str(x) for x in current_picks) if current_picks else "1, 2, 3, 4, 5, 6"
-)
+current_input_val = st.session_state.get("proof_input_field", step2_numbers_str)
 
 with st.form(key="client_proof_form"):
     proof_input_text = st.text_input(
-        "Enter 6 Draw Numbers (e.g. 7, 12, 16, 20, 23, 27) or Ticket ID:",
+        "Enter 6 Draw Numbers or Ticket ID (Always synced with Step 2):",
         value=current_input_val,
         key="proof_form_input"
     ).strip()
     submitted = st.form_submit_button("🔍 Verify Draw / Check Exact Excel Sheet Rows", type="primary", use_container_width=True)
+
+if submitted and proof_input_text:
+    num_matches = re.findall(r'\d+', proof_input_text)
+    if len(num_matches) == pick_size:
+        parsed_picks = sorted([int(x) for x in num_matches if 1 <= int(x) <= pool_size])
+        if len(parsed_picks) == pick_size and parsed_picks != current_picks:
+            st.session_state["chosen_numbers"] = parsed_picks
+            st.session_state["proof_input_field"] = ", ".join(str(x) for x in parsed_picks)
+            st.session_state["last_synced_step2"] = ", ".join(str(x) for x in parsed_picks)
+            st.rerun()
 
 proof_to_process = proof_input_text if submitted else current_input_val
 
